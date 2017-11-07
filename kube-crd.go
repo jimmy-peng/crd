@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/jimmy-peng/crd/client"
-	"github.com/jimmy-peng/crd/crd"
+	"github.com/jimmy-peng/crd/crds"
 
 	apiextcs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

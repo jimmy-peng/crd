@@ -16,7 +16,7 @@ limitations under the License.
 package client
 
 import (
-	"github.com/jimmy-peng/crd/crd"
+	"github.com/jimmy-peng/crd/crds"
 	apiv1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
