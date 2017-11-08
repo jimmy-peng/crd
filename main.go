@@ -18,21 +18,11 @@ package main
 import (
 	"fmt"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
-
-	"k8s.io/client-go/tools/clientcmd"
 	"flag"
 	"github.com/jimmy-peng/crd/types/vtype"
 	"github.com/jimmy-peng/crd/backend"
 )
 
-// return rest config, if path not specified assume in cluster config
-func GetClientConfig(kubeconfig string) (*rest.Config, error) {
-	if kubeconfig != "" {
-		return clientcmd.BuildConfigFromFlags("", kubeconfig)
-	}
-	return rest.InClusterConfig()
-}
 
 func main() {
 
