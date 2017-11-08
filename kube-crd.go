@@ -17,18 +17,13 @@ package main
 
 import (
 	"fmt"
-	"time"
-
-	"github.com/jimmy-peng/crd/client"
-	"github.com/jimmy-peng/crd/crds"
-
-	apiextcs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
+
 	"k8s.io/client-go/tools/clientcmd"
 	"flag"
+	"github.com/jimmy-peng/crd/types/vtype"
+	"github.com/jimmy-peng/crd/backend"
 )
 
 // return rest config, if path not specified assume in cluster config
@@ -44,96 +39,32 @@ func main() {
 	kubeconf := flag.String("kubeconf", "admin.conf", "Path to a kube config. Only required if out-of-cluster.")
 	flag.Parse()
 
-	config, err := GetClientConfig(*kubeconf)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// create clientset and create our CRD, this only need to run once
-	clientset, err := apiextcs.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
-	}
-
-
-	// note: if the CRD exist our CreateCRD function is set to exit without an error
-	err = crd.CreateCRD(clientset)
-	if err != nil {
-		panic(err)
-	}
-
-	err = crd.WaitCRDCreateDone(clientset)
-	if err != nil {
-		panic(err)
-	}
-
-	// Wait for the CRD to be created before we use it (only needed if its a new one)
-	//time.Sleep(3 * time.Second)
-
-	// Create a new clientset which include our CRD schema
-	crdcs, scheme, err := crd.NewClient(config)
-	if err != nil {
-		panic(err)
-	}
-
-	// Create a CRD client interface
-	crdclient := client.CrdClient(crdcs, scheme)
+	backend, err := backend.NewCRDBackend(*kubeconf)
 
 	// Create a new Example object and write to k8s
-	example := &crd.Lhvolume{
+	example := vtype.Lhvolume{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:   "lhvolumestest",
 			Labels: map[string]string{"mylabel": "test"},
 		},
-		Spec: crd.LhVolumeSpec{
+		Spec: vtype.LhVolumeSpec{
 			Name: "valumes",
 			NodeId: "12345678",
 			NumReplicas: 3,
 		},
-		Status: crd.LhVolumeStatus{
+		Status: vtype.LhVolumeStatus{
 			State:   "created",
 			Message: "Created, not processed yet",
 		},
 	}
 
-	result, err := crdclient.Create(example)
+	result, err := backend.Create(example.Name, example)
+	fmt.Printf("CREATED: %d\n", result)
+	var ss vtype.Lhvolume
+	resul, err := backend.Get("lhvolumestest", ss)
 	if err == nil {
-		fmt.Printf("CREATED: %#v\n", result)
-	} else if apierrors.IsAlreadyExists(err) {
-		fmt.Printf("ALREADY EXISTS: %#v\n", result)
-	} else {
-		panic(err)
+		fmt.Printf("GET: %d\n", resul)
 	}
-
-
-	// List all Example objects
-	items, err := crdclient.List(meta_v1.ListOptions{})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("List:\n%s\n", items)
-
-	// Example Controller
-	// Watch for changes in Example objects and fire Add, Delete, Update callbacks
-	_, controller := cache.NewInformer(
-		crdclient.NewListWatch(),
-		&crd.Lhvolume{},
-		time.Minute*10,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				fmt.Printf("add: %s \n", obj)
-			},
-			DeleteFunc: func(obj interface{}) {
-				fmt.Printf("delete: %s \n", obj)
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				fmt.Printf("Update old: %s \n      New: %s\n", oldObj, newObj)
-			},
-		},
-	)
-
-	stop := make(chan struct{})
-	go controller.Run(stop)
 
 	// Wait forever
 	select {}
