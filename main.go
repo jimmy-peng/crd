@@ -52,39 +52,56 @@ func main() {
 
 	fmt.Printf("out CREATED: %#v\n", err)
 	ee := vtype.VolumeInfo{
-			Name:   "lhvolumestest",
+			Name:   "lh.volumes-test",
 			NodeID: "12345678",
 			NumberOfReplicas: 3,
 	}
 
-	result, err := backend.Create( "/longhorn_manager_test/volumes/" + ee.Name, ee)
+	result, err := backend.Create( "/longhorn_manager_test/volumes/" + ee.Name + "/base", ee)
 	fmt.Printf("out CREATED: %d\n", result)
 
 	e := ntype.NodeInfo{
-		Name:   "lhvolumestest",
+		Name:   "lh.volumes-test",
 		NodeID: "12345678",
 		NumberOfReplicas: 3,
 	}
 	resul, err := backend.Create( "/longhorn_manager_test/nodes/" + e.Name, e)
 	fmt.Printf("out CREATED: %d\n", resul)
-/*
-	resu, err := backend.Update("/longhorn_manager_test/volumes/lhvolumestest", e, result)
+
+
+	u := vtype.VolumeInfo{
+		Name:   "lh.volumes-test",
+		NodeID: "123456789",
+		NumberOfReplicas: 8,
+	}
+
+	resu, err := backend.Update("/longhorn_manager_test/volumes/lh.volumes-test/base", u, result)
 	if err == nil {
 		fmt.Printf("out Update: %d\n", resu)
 	}
 
 	var ss vtype.VolumeInfo
-	r, err := backend.Get("/longhorn_manager_test/volumes/lhvolumestest", &ss)
+	r, err := backend.Get("/longhorn_manager_test/volumes/lh.volumes-test", &ss)
 
 	if err == nil {
 		fmt.Printf("out GET: %#v %d\n", ss, r)
 	}
 
-	rl, err := backend.Keys("/longhorn_manager_test/volumes/lhvolumestest")
+
+	rl, err := backend.Keys("/longhorn_manager_test/volumes")
 	if err == nil {
 		fmt.Printf("out List: %#v\n", rl)
 	}
-*/
+
+	er := backend.Delete("/longhorn_manager_test/volumes/lh.volumes-test/base")
+	if er != nil {
+		fmt.Printf("out Delete %#v\n", er)
+	}
+
+	a, err := backend.Keys("/longhorn_manager_test/volumes")
+	if err == nil {
+		fmt.Printf("out after List: %#v\n", a)
+	}
 	// Wait forever
 	select {}
 }
