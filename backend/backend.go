@@ -124,6 +124,7 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 		fmt.Printf("CREATED: %#v\n", result)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
+	panic(key)
 /*
 	r, ok := obj.(rtype.ReplicasInfo)
 	if ok {
@@ -188,7 +189,7 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		}
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
-	return 0, nil
+	panic(key)
 /*
 	r, ok := obj.(rtype.ReplicasInfo)
 	if ok {
@@ -230,6 +231,7 @@ func (s *CRDBackend) Delete(key string) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
 	if strings.HasPrefix(key, "/longhorn_manager_test/nodes/") {
@@ -238,6 +240,7 @@ func (s *CRDBackend) Delete(key string) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 /*
 	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
@@ -258,6 +261,7 @@ func (s *CRDBackend) Delete(key string) error {
 		}
 	}
 */
+	panic(key)
 	return nil
 }
 
@@ -306,6 +310,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		}
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}*/
+	panic(key)
 	return 0, nil
 }
 
@@ -376,5 +381,6 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 
 		return ret, nil
 	}
+	panic(key)
 	return nil, nil
 }
