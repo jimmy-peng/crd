@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package vclient
+package nclient
 
 import (
-	"github.com/jimmy-peng/crd/types/vtype"
-	"github.com/jimmy-peng/crd/crds/vcrd"
+	"github.com/jimmy-peng/crd/types/ntype"
+	"github.com/jimmy-peng/crd/crds/ncrd"
 	apiv1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -36,25 +36,25 @@ type Crdclient struct {
 // This file implement all the (CRUD) client methods we need to access our CRD object
 
 func CrdClient(cl *rest.RESTClient, scheme *runtime.Scheme) *Crdclient {
-	return &Crdclient{cl: cl, ns: apiv1.NamespaceDefault, plural: vcrd.CRDPlural,
+	return &Crdclient{cl: cl, ns: apiv1.NamespaceDefault, plural: ncrd.CRDPlural,
 		codec: runtime.NewParameterCodec(scheme)}
 }
 
-func CreateVolumeClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclient {
+func CreateNodeClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclient {
 	// note: if the CRD exist our CreateCRD function is set to exit without an error
-	err := vcrd.CreateVolumeCRD(clientset)
+	err := ncrd.CreateNodeCRD(clientset)
 	if err != nil {
 		panic(err)
 	}
 
 	// Wait for the CRD to be created before we use it (only needed if its a new one)
-	err = vcrd.VolumeWaitCRDCreateDone(clientset)
+	err = ncrd.NodeWaitCRDCreateDone(clientset)
 	if err != nil {
 		panic(err)
 	}
 
 	// Create a new clientset which include our CRD schema
-	crdcs, scheme, err := vcrd.VolumeNewClient(cfg)
+	crdcs, scheme, err := ncrd.NodeNewClient(cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -65,16 +65,16 @@ func CreateVolumeClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclie
 
 
 
-func (f *Crdclient) Create(obj *vtype.Crdvolume) (*vtype.Crdvolume, error) {
-	var result vtype.Crdvolume
+func (f *Crdclient) Create(obj *ntype.Crdnode) (*ntype.Crdnode, error) {
+	var result ntype.Crdnode
 	err := f.cl.Post().
 		Namespace(f.ns).Resource(f.plural).
 		Body(obj).Do().Into(&result)
 	return &result, err
 }
 
-func (f *Crdclient) Update(obj *vtype.Crdvolume, name string) (*vtype.Crdvolume, error) {
-	result := vtype.Crdvolume{}
+func (f *Crdclient) Update(obj *ntype.Crdnode, name string) (*ntype.Crdnode, error) {
+	result := ntype.Crdnode{}
 	err := f.cl.Put().Name(name).
 		Namespace(f.ns).Resource(f.plural).
 		Body(obj).Do().Into(&result)
@@ -88,16 +88,16 @@ func (f *Crdclient) Delete(name string, options *meta_v1.DeleteOptions) error {
 		Error()
 }
 
-func (f *Crdclient) Get(name string) (*vtype.Crdvolume, error) {
-	result := vtype.Crdvolume{}
+func (f *Crdclient) Get(name string) (*ntype.Crdnode, error) {
+	result := ntype.Crdnode{}
 	err := f.cl.Get().
 		Namespace(f.ns).Resource(f.plural).
 		Name(name).Do().Into(&result)
 	return &result, err
 }
 
-func (f *Crdclient) List(opts meta_v1.ListOptions) (*vtype.CrdvolumeList, error) {
-	result := vtype.CrdvolumeList{}
+func (f *Crdclient) List(opts meta_v1.ListOptions) (*ntype.CrdnodeList, error) {
+	result := ntype.CrdnodeList{}
 	err := f.cl.Get().
 		Namespace(f.ns).Resource(f.plural).
 		VersionedParams(&opts, f.codec).

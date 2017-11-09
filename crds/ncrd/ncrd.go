@@ -13,12 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package vcrd
+package ncrd
 
 import (
 	"reflect"
 	"github.com/jimmy-peng/crd/crds/commoncrd"
-	"github.com/jimmy-peng/crd/types/vtype"
+	"github.com/jimmy-peng/crd/types/ntype"
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextcs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,17 +29,17 @@ import (
 )
 
 const (
-	CRDPlural      string = "crdvolumes"
+	CRDPlural      string = "crdnodes"
 	CRDGroup       string = "rancher.io"
 	CRDVersion     string = "v1"
 	FullCRDName    string = CRDPlural + "." + CRDGroup
-	Shortname	   string = "cv"
+	Shortname	   string = "cn"
 )
 
 
 
 // Create the CRD resource, ignore error if it already exists
-func CreateVolumeCRD(clientset apiextcs.Interface) error {
+func CreateNodeCRD(clientset apiextcs.Interface) error {
 	crd := &apiextv1beta1.CustomResourceDefinition{
 		ObjectMeta: meta_v1.ObjectMeta{Name: FullCRDName},
 		Spec: apiextv1beta1.CustomResourceDefinitionSpec{
@@ -48,7 +48,7 @@ func CreateVolumeCRD(clientset apiextcs.Interface) error {
 			Scope:   apiextv1beta1.NamespaceScoped,
 			Names:   apiextv1beta1.CustomResourceDefinitionNames{
 				Plural: CRDPlural,
-				Kind:   reflect.TypeOf(vtype.Crdvolume{}).Name(),
+				Kind:   reflect.TypeOf(ntype.Crdnode{}).Name(),
 				ShortNames: []string{Shortname},
 			},
 		},
@@ -64,24 +64,23 @@ func CreateVolumeCRD(clientset apiextcs.Interface) error {
 }
 
 
-
 // Create a  Rest client with the new CRD Schema
 var schemeGroupVersion = schema.GroupVersion{Group: CRDGroup, Version: CRDVersion}
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(schemeGroupVersion,
-		&vtype.Crdvolume{},
-		&vtype.CrdvolumeList{},
+		&ntype.Crdnode{},
+		&ntype.CrdnodeList{},
 	)
 	meta_v1.AddToGroupVersion(scheme, schemeGroupVersion)
 	return nil
 }
 
-func VolumeWaitCRDCreateDone(clientset apiextcs.Interface) error {
+func NodeWaitCRDCreateDone(clientset apiextcs.Interface) error {
 	return commoncrd.WaitCRDCreateDone(clientset, FullCRDName)
 }
 
-func VolumeNewClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
+func NodeNewClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
 	var schemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 	return commoncrd.NewClient(cfg, &schemeGroupVersion, &schemeBuilder);
 }

@@ -16,11 +16,13 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+//	"fmt"
 	"flag"
-	"github.com/jimmy-peng/crd/types/vtype"
+//	"github.com/jimmy-peng/crd/types/vtype"
 	"github.com/jimmy-peng/crd/backend"
+	"fmt"
+	"github.com/jimmy-peng/crd/types/vtype"
+	"github.com/jimmy-peng/crd/types/ntype"
 )
 
 
@@ -30,9 +32,9 @@ func main() {
 	flag.Parse()
 
 	backend, err := backend.NewCRDBackend(*kubeconf)
-
+	/*
 	// Create a new Example object and write to k8s
-	example := vtype.Lhvolume{
+	example := vtype.Crdvolume{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:   "lhvolumestest",
 			Labels: map[string]string{"mylabel": "test"},
@@ -46,16 +48,43 @@ func main() {
 			State:   "created",
 			Message: "Created, not processed yet",
 		},
+	}*/
+
+	fmt.Printf("out CREATED: %#v\n", err)
+	ee := vtype.VolumeInfo{
+			Name:   "lhvolumestest",
+			NodeID: "12345678",
+			NumberOfReplicas: 3,
 	}
 
-	result, err := backend.Create(example.Name, example)
-	fmt.Printf("CREATED: %d\n", result)
-	var ss vtype.Lhvolume
-	resul, err := backend.Get("lhvolumestest", ss)
+	result, err := backend.Create( "/longhorn_manager_test/volumes/" + ee.Name, ee)
+	fmt.Printf("out CREATED: %d\n", result)
+
+	e := ntype.NodeInfo{
+		Name:   "lhvolumestest",
+		NodeID: "12345678",
+		NumberOfReplicas: 3,
+	}
+	resul, err := backend.Create( "/longhorn_manager_test/nodes/" + e.Name, e)
+	fmt.Printf("out CREATED: %d\n", resul)
+/*
+	resu, err := backend.Update("/longhorn_manager_test/volumes/lhvolumestest", e, result)
 	if err == nil {
-		fmt.Printf("GET: %d\n", resul)
+		fmt.Printf("out Update: %d\n", resu)
 	}
 
+	var ss vtype.VolumeInfo
+	r, err := backend.Get("/longhorn_manager_test/volumes/lhvolumestest", &ss)
+
+	if err == nil {
+		fmt.Printf("out GET: %#v %d\n", ss, r)
+	}
+
+	rl, err := backend.Keys("/longhorn_manager_test/volumes/lhvolumestest")
+	if err == nil {
+		fmt.Printf("out List: %#v\n", rl)
+	}
+*/
 	// Wait forever
 	select {}
 }
