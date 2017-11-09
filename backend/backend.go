@@ -15,6 +15,7 @@ import (
 	"strings"
 	"github.com/jimmy-peng/crd/clients/nclient"
 	"github.com/jimmy-peng/crd/types/ntype"
+	"github.com/rancher/longhorn-manager/types"
 )
 
 type CRDBackend struct {
@@ -93,7 +94,7 @@ func NewCRDBackend(kubeconf string)(*CRDBackend, error)  {
 }
 
 func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
-	v, ok := obj.(vtype.VolumeInfo)
+	v, ok := obj.(types.VolumeInfo)
 	if ok {
 		CRDobj := vtype.Crdvolume{}
 		vtype.LhVoulme2CRDVolume(&v, &CRDobj, key)
@@ -109,7 +110,7 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
-	n, ok := obj.(ntype.NodeInfo)
+	n, ok := obj.(types.NodeInfo)
 	if ok {
 		CRDobj := ntype.Crdnode{}
 		ntype.LhNode2CRDNode(&n, &CRDobj, key)
@@ -161,7 +162,7 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 	if index == 0 {
 		return 0, fmt.Errorf("kvstore index cannot be 0")
 	}
-	v, ok := obj.(vtype.VolumeInfo)
+	v, ok := obj.(types.VolumeInfo)
 	if ok {
 		CRDobj := vtype.Crdvolume{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
@@ -174,7 +175,7 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		}
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
-	n, ok := obj.(ntype.NodeInfo)
+	n, ok := obj.(types.NodeInfo)
 	if ok {
 		CRDobj := ntype.Crdnode{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
@@ -261,7 +262,7 @@ func (s *CRDBackend) Delete(key string) error {
 }
 
 func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
-	v, ok := obj.(* vtype.VolumeInfo)
+	v, ok := obj.(* types.VolumeInfo)
 	if ok {
 		validkey := strings.Split(key, "/")[3]
 		result, err := s.VolumeClient.Get(validkey)
@@ -272,7 +273,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
-	n, ok := obj.(* ntype.NodeInfo)
+	n, ok := obj.(* types.NodeInfo)
 	if ok {
 		validkey := strings.Split(key, "/")[3]
 		result, err := s.NodeClient.Get(validkey)

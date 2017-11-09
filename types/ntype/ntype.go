@@ -4,6 +4,7 @@ package ntype
 import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/jimmy-peng/crd/tools/crdcopy"
+	"github.com/rancher/longhorn-manager/types"
 )
 
 // Definition of our CRD LongHorn Volume class
@@ -20,7 +21,7 @@ type CrdNodeSpec struct {
 	IP               string    `json:"ip"`
 	ManagerPort      int       `json:"managerPort"`
 	OrchestratorPort int       `json:"orchestratorPort"`
-	State            NodeState `json:"state"`
+	State            types.NodeState `json:"state"`
 	LastCheckin      string    `json:"lastCheckin"`
 }
 
@@ -35,12 +36,12 @@ type CrdnodeList struct {
 	Items            []Crdnode `json:"items"`
 }
 
-func LhNode2CRDNode(vinfo *NodeInfo, crdnode *Crdnode, pathname string){
+func LhNode2CRDNode(vinfo *types.NodeInfo, crdnode *Crdnode, pathname string){
 	crdnode.ObjectMeta.Name = vinfo.Name
 	crdcopy.CRDDeepCopy(&crdnode.Spec, vinfo)
 }
 
-func CRDNode2LhNode(crdnode *Crdnode, vinfo *NodeInfo)  {
+func CRDNode2LhNode(crdnode *Crdnode, vinfo *types.NodeInfo)  {
 	crdcopy.CRDDeepCopy(vinfo, &crdnode.Spec)
 }
 
@@ -53,6 +54,7 @@ type NodeInfo struct {
 
 }
 */
+/*
 type NodeInfo struct {
 	ID               string    `json:"id"`
 	Name             string    `json:"name"`
@@ -70,5 +72,5 @@ type KVMetadata struct {
 }
 
 type NodeState string
-
+*/
 

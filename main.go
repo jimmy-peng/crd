@@ -16,13 +16,10 @@ limitations under the License.
 package main
 
 import (
-//	"fmt"
 	"flag"
-//	"github.com/jimmy-peng/crd/types/vtype"
 	"github.com/jimmy-peng/crd/backend"
 	"fmt"
-	"github.com/jimmy-peng/crd/types/vtype"
-	"github.com/jimmy-peng/crd/types/ntype"
+	"github.com/rancher/longhorn-manager/types"
 )
 
 
@@ -34,7 +31,7 @@ func main() {
 	backend, err := backend.NewCRDBackend(*kubeconf)
 
 	fmt.Printf("out CREATED: %#v\n", err)
-	ee := vtype.VolumeInfo{
+	ee := types.VolumeInfo{
 			Name:   "lh.volumes-test",
 			NodeID: "12345678",
 			NumberOfReplicas: 3,
@@ -43,7 +40,7 @@ func main() {
 	result, err := backend.Create( "/longhorn_manager_test/volumes/" + ee.Name + "/base", ee)
 	fmt.Printf("out CREATED: %d\n", result)
 
-	e := ntype.NodeInfo{
+	e := types.NodeInfo{
 		Name:   "lh.volumes-test",
 		ID: "12345678",
 		IP: "192.168.1.2",
@@ -52,7 +49,7 @@ func main() {
 	fmt.Printf("out CREATED: %d\n", resul)
 
 
-	u := vtype.VolumeInfo{
+	u := types.VolumeInfo{
 		Name:   "lh.volumes-test",
 		NodeID: "123456789",
 		NumberOfReplicas: 8,
@@ -63,19 +60,25 @@ func main() {
 		fmt.Printf("out Update: %d\n", resu)
 	}
 
-	var ss vtype.VolumeInfo
-	r, err := backend.Get("/longhorn_manager_test/volumes/lh.volumes-test", &ss)
+	var ss types.VolumeInfo
+	r, err := backend.Get("/longhorn_manager_test/volumes/lh.volumes-test/base", &ss)
 
 	if err == nil {
 		fmt.Printf("out GET: %#v %d\n", ss, r)
 	}
 
+	var s types.NodeInfo
+	ns, err := backend.Get("/longhorn_manager_test/nodes/lh.volumes-test", &s)
+
+	if err == nil {
+		fmt.Printf("out GET: %#v %d\n", s, ns)
+	}
 
 	rl, err := backend.Keys("/longhorn_manager_test/volumes")
 	if err == nil {
 		fmt.Printf("out List: %#v\n", rl)
 	}
-
+/*
 	er := backend.Delete("/longhorn_manager_test/volumes/lh.volumes-test/base")
 	if er != nil {
 		fmt.Printf("out Delete %#v\n", er)
@@ -84,7 +87,7 @@ func main() {
 	a, err := backend.Keys("/longhorn_manager_test/volumes")
 	if err == nil {
 		fmt.Printf("out after List: %#v\n", a)
-	}
+	}*/
 	// Wait forever
 	select {}
 }
