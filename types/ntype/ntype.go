@@ -3,6 +3,7 @@ package ntype
 
 import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/jimmy-peng/crd/tools/crdcopy"
 )
 
 // Definition of our CRD LongHorn Volume class
@@ -14,9 +15,13 @@ type Crdnode struct {
 }
 
 type CrdNodeSpec struct {
-	Name string `json:"name"`
-	NodeId string   `json:"nodeid"`
-	NumReplicas int    `json:"numreplicas,omitempty"`
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	IP               string    `json:"ip"`
+	ManagerPort      int       `json:"managerPort"`
+	OrchestratorPort int       `json:"orchestratorPort"`
+	State            NodeState `json:"state"`
+	LastCheckin      string    `json:"lastCheckin"`
 }
 
 type CrdNodeStatus struct {
@@ -32,18 +37,14 @@ type CrdnodeList struct {
 
 func LhNode2CRDNode(vinfo *NodeInfo, crdnode *Crdnode, pathname string){
 	crdnode.ObjectMeta.Name = vinfo.Name
-	crdnode.Spec.Name = pathname
-	crdnode.Spec.NodeId = vinfo.NodeID
-	crdnode.Spec.NumReplicas = vinfo.NumberOfReplicas
+	crdcopy.CRDDeepCopy(&crdnode.Spec, vinfo)
 }
 
-func CRDNode2LhNode(crdvolume *Crdnode, vinfo *NodeInfo)  {
-
-	vinfo.Name = crdvolume.ObjectMeta.Name
-	vinfo.NodeID = crdvolume.Spec.NodeId
-	vinfo.NumberOfReplicas = crdvolume.Spec.NumReplicas
+func CRDNode2LhNode(crdnode *Crdnode, vinfo *NodeInfo)  {
+	crdcopy.CRDDeepCopy(vinfo, &crdnode.Spec)
 }
 
+/*
 type NodeInfo struct {
 	// Attributes
 	Name                string
@@ -51,4 +52,23 @@ type NodeInfo struct {
 	NodeID   string
 
 }
+*/
+type NodeInfo struct {
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	IP               string    `json:"ip"`
+	ManagerPort      int       `json:"managerPort"`
+	OrchestratorPort int       `json:"orchestratorPort"`
+	State            NodeState `json:"state"`
+	LastCheckin      string    `json:"lastCheckin"`
+
+	KVMetadata
+}
+
+type KVMetadata struct {
+	KVIndex uint64 `json:"-"`
+}
+
+type NodeState string
+
 

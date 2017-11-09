@@ -32,23 +32,6 @@ func main() {
 	flag.Parse()
 
 	backend, err := backend.NewCRDBackend(*kubeconf)
-	/*
-	// Create a new Example object and write to k8s
-	example := vtype.Crdvolume{
-		ObjectMeta: meta_v1.ObjectMeta{
-			Name:   "lhvolumestest",
-			Labels: map[string]string{"mylabel": "test"},
-		},
-		Spec: vtype.LhVolumeSpec{
-			Name: "valumes",
-			NodeId: "12345678",
-			NumReplicas: 3,
-		},
-		Status: vtype.LhVolumeStatus{
-			State:   "created",
-			Message: "Created, not processed yet",
-		},
-	}*/
 
 	fmt.Printf("out CREATED: %#v\n", err)
 	ee := vtype.VolumeInfo{
@@ -62,8 +45,8 @@ func main() {
 
 	e := ntype.NodeInfo{
 		Name:   "lh.volumes-test",
-		NodeID: "12345678",
-		NumberOfReplicas: 3,
+		ID: "12345678",
+		IP: "192.168.1.2",
 	}
 	resul, err := backend.Create( "/longhorn_manager_test/nodes/" + e.Name, e)
 	fmt.Printf("out CREATED: %d\n", resul)
