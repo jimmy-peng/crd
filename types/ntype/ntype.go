@@ -36,41 +36,11 @@ type CrdnodeList struct {
 	Items            []Crdnode `json:"items"`
 }
 
-func LhNode2CRDNode(vinfo *types.NodeInfo, crdnode *Crdnode, pathname string){
-	crdnode.ObjectMeta.Name = vinfo.Name
+func LhNode2CRDNode(vinfo *types.NodeInfo, crdnode *Crdnode, key string){
+	crdnode.ObjectMeta.Name = key
 	crdcopy.CRDDeepCopy(&crdnode.Spec, vinfo)
 }
 
 func CRDNode2LhNode(crdnode *Crdnode, vinfo *types.NodeInfo)  {
 	crdcopy.CRDDeepCopy(vinfo, &crdnode.Spec)
 }
-
-/*
-type NodeInfo struct {
-	// Attributes
-	Name                string
-	NumberOfReplicas    int
-	NodeID   string
-
-}
-*/
-/*
-type NodeInfo struct {
-	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	IP               string    `json:"ip"`
-	ManagerPort      int       `json:"managerPort"`
-	OrchestratorPort int       `json:"orchestratorPort"`
-	State            NodeState `json:"state"`
-	LastCheckin      string    `json:"lastCheckin"`
-
-	KVMetadata
-}
-
-type KVMetadata struct {
-	KVIndex uint64 `json:"-"`
-}
-
-type NodeState string
-*/
-

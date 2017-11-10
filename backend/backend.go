@@ -16,11 +16,14 @@ import (
 	"github.com/jimmy-peng/crd/clients/nclient"
 	"github.com/jimmy-peng/crd/types/ntype"
 	"github.com/rancher/longhorn-manager/types"
+	"github.com/jimmy-peng/crd/clients/rclient"
+	"github.com/jimmy-peng/crd/types/rtype"
 )
 
 type CRDBackend struct {
 	VolumeClient *vclient.Crdclient
 	NodeClient *nclient.Crdclient
+	ReplicasClient *rclient.Crdclient
 }
 
 // return rest config, if path not specified assume in cluster config
@@ -87,6 +90,7 @@ func NewCRDBackend(kubeconf string)(*CRDBackend, error)  {
 	lhbackend := &CRDBackend{
 		VolumeClient: vclient.CreateVolumeClient(clientset, config),
 		NodeClient: nclient.CreateNodeClient(clientset, config),
+		ReplicasClient: rclient.CreateVolumeClient(clientset, config),
 	}
 
 	CreateVolumeController(lhbackend.VolumeClient)
@@ -97,7 +101,7 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 	v, ok := obj.(types.VolumeInfo)
 	if ok {
 		CRDobj := vtype.Crdvolume{}
-		vtype.LhVoulme2CRDVolume(&v, &CRDobj, key)
+		vtype.LhVoulme2CRDVolume(&v, &CRDobj)
 		result, err := s.VolumeClient.Create(&CRDobj)
 		if err != nil {
 			fmt.Printf("ERROR: %#v\n", err)
@@ -113,7 +117,8 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 	n, ok := obj.(types.NodeInfo)
 	if ok {
 		CRDobj := ntype.Crdnode{}
-		ntype.LhNode2CRDNode(&n, &CRDobj, key)
+		validkey := strings.Split(key, "/")[3]
+		ntype.LhNode2CRDNode(&n, &CRDobj, validkey)
 		result, err := s.NodeClient.Create(&CRDobj)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
@@ -124,12 +129,13 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 		fmt.Printf("CREATED: %#v\n", result)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
-	panic(key)
-/*
-	r, ok := obj.(rtype.ReplicasInfo)
+
+
+	r, ok := obj.(types.ReplicaInfo)
 	if ok {
 		CRDobj := rtype.Crdreplicas{}
-		ntype.LhReplicas2CRDReplicas(&r, &CRDobj, key)
+		validkey := strings.Split(key, "/")[6]
+		rtype.LhReplicas2CRDReplicas(&r, &CRDobj, validkey)
 		result, err := s.ReplicasClient.Create(&CRDobj)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
@@ -140,22 +146,23 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 		fmt.Printf("CREATED: %#v\n", result)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
-
-	c, ok := obj.(ctype.ControllerInfo)
-	if ok {
-		CRDobj := ctype.Crdcontroller{}
-		ntype.LhController2CRDController(&r, &CRDobj, key)
-		result, err := s.ControllerClient.Create(&CRDobj)
-		if err != nil {
-			if apierrors.IsAlreadyExists(err) {
-				fmt.Printf("ALREADY EXISTS: %#v\n", result)
+	panic(key)
+	/*
+		c, ok := obj.(ctype.ControllerInfo)
+		if ok {
+			CRDobj := ctype.Crdcontroller{}
+			ntype.LhController2CRDController(&r, &CRDobj, key)
+			result, err := s.ControllerClient.Create(&CRDobj)
+			if err != nil {
+				if apierrors.IsAlreadyExists(err) {
+					fmt.Printf("ALREADY EXISTS: %#v\n", result)
+				}
+				return 0, err
 			}
-			return 0, err
+			fmt.Printf("CREATED: %#v\n", result)
+			return strconv.ParseUint(result.ResourceVersion, 10, 64)
 		}
-		fmt.Printf("CREATED: %#v\n", result)
-		return strconv.ParseUint(result.ResourceVersion, 10, 64)
-	}
-	*/
+		*/
 	return 0, nil
 }
 
@@ -167,7 +174,7 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 	if ok {
 		CRDobj := vtype.Crdvolume{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
-		vtype.LhVoulme2CRDVolume(&v, &CRDobj, key)
+		vtype.LhVoulme2CRDVolume(&v, &CRDobj)
 		validkey := strings.Split(key, "/")[3]
 		result, err := s.VolumeClient.Update(&CRDobj, validkey)
 		if err != nil {
@@ -180,8 +187,8 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 	if ok {
 		CRDobj := ntype.Crdnode{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
-		ntype.LhNode2CRDNode(&n, &CRDobj, key)
 		validkey := strings.Split(key, "/")[3]
+		ntype.LhNode2CRDNode(&n, &CRDobj, validkey)
 		result, err := s.NodeClient.Update(&CRDobj, validkey)
 		if err != nil {
 			fmt.Printf("UPDATE: %#v\n", err)
@@ -189,14 +196,14 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		}
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
-	panic(key)
-/*
-	r, ok := obj.(rtype.ReplicasInfo)
+
+
+	r, ok := obj.(types.ReplicaInfo)
 	if ok {
 		CRDobj := rtype.Crdreplicas{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
-		ntype.LhReplicas2CRDReplicas(&r, &CRDobj, key)
 		validkey := strings.Split(key, "/")[6]
+		rtype.LhReplicas2CRDReplicas(&r, &CRDobj, validkey)
 		result, err := s.ReplicasClient.Update(&CRDobj, validkey)
 		if err != nil {
 			fmt.Printf("UPDATE: %#v\n", err)
@@ -204,21 +211,22 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		}
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
-
-	c, ok := obj.(ctype.ControllerInfo)
-	if ok {
-		CRDobj := rtype.Crdcontroller{}
-		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
-		ntype.LhController2CRDController(&c, &CRDobj, key)
-		validkey := strings.Split(key, "/")[3]
-		result, err := s.ControllerClient.Update(&CRDobj, validkey)
-		if err != nil {
-			fmt.Printf("UPDATE: %#v\n", err)
-			return 0, err
+	panic(key)
+	/*
+		c, ok := obj.(ctype.ControllerInfo)
+		if ok {
+			CRDobj := rtype.Crdcontroller{}
+			CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
+			ntype.LhController2CRDController(&c, &CRDobj, key)
+			validkey := strings.Split(key, "/")[3]
+			result, err := s.ControllerClient.Update(&CRDobj, validkey)
+			if err != nil {
+				fmt.Printf("UPDATE: %#v\n", err)
+				return 0, err
+			}
+			return strconv.ParseUint(result.ResourceVersion, 10, 64)
 		}
-		return strconv.ParseUint(result.ResourceVersion, 10, 64)
-	}
-*/
+	*/
 	return 0, nil
 }
 
@@ -242,7 +250,7 @@ func (s *CRDBackend) Delete(key string) error {
 		}
 		return nil
 	}
-/*
+
 	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
 		strings.Contains(key, "/instances/replicas/") {
 		validkey := strings.Split(key, "/")[6]
@@ -251,16 +259,16 @@ func (s *CRDBackend) Delete(key string) error {
 			return err
 		}
 	}
-
-	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
-		strings.HasSuffix(key, "/instances/controller") {
-		validkey := strings.Split(key, "/")[3]
-		err := s.ControllerClient.Delete(validkey, &meta_v1.DeleteOptions{})
-		if err != nil {
-			return err
+	/*
+		if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
+			strings.HasSuffix(key, "/instances/controller") {
+			validkey := strings.Split(key, "/")[3]
+			err := s.ControllerClient.Delete(validkey, &meta_v1.DeleteOptions{})
+			if err != nil {
+				return err
+			}
 		}
-	}
-*/
+	*/
 	panic(key)
 	return nil
 }
@@ -287,17 +295,17 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		}
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
-	/*
-	r, ok := obj.(* rtype.ReplicasInfo)
+
+	r, ok := obj.(* types.ReplicaInfo)
 	if ok {
 		validkey := strings.Split(key, "/")[6]
 		result, err := s.ReplicasClient.Get(validkey)
-		ntype.CRDReplicas2LhReplicas(result, n)
+		rtype.CRDReplicas2LhReplicas(result, r)
 		if err != nil {
 			return 0, err
 		}
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
-	}*/
+	}
 
 	/*
 	c, ok := obj.(* ctype.ControllerInfo)
@@ -339,11 +347,11 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 
 		return ret, nil
 	}
-/*
-	if strings.HasPrefix(key, "/longhorn_manager_test/volumes") &&
-		strings.Contains(key, "/instances/replicas") {
+
+	if key == "/longhorn_manager_test/nodes" {
+
 		ret := []string{}
-		r, err := s.ReplicasClient.List(meta_v1.ListOptions{})
+		r, err := s.NodeClient.List(meta_v1.ListOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -357,14 +365,14 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 			}
 			ret = append(ret, item.ResourceVersion)
 		}
+
 		return ret, nil
-	}*/
-
-
-	if strings.HasPrefix(key, "/longhorn_manager_test/nodes") {
+	}
+	if key == "/longhorn_manager_test/nodes" &&
+		strings.Contains(key, "/instances/replicas/") {
 
 		ret := []string{}
-		r, err := s.NodeClient.List(meta_v1.ListOptions{})
+		r, err := s.ReplicasClient.List(meta_v1.ListOptions{})
 		if err != nil {
 			return nil, err
 		}

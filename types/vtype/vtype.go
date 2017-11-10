@@ -51,7 +51,7 @@ type CrdvolumeList struct {
 	Items            []Crdvolume `json:"items"`
 }
 
-func LhVoulme2CRDVolume(vinfo *types.VolumeInfo, crdvolume *Crdvolume, pathname string){
+func LhVoulme2CRDVolume(vinfo *types.VolumeInfo, crdvolume *Crdvolume){
 	crdvolume.ObjectMeta.Name = vinfo.Name
 	crdcopy.CRDDeepCopy(&crdvolume.Spec, vinfo)
 }
@@ -59,42 +59,3 @@ func LhVoulme2CRDVolume(vinfo *types.VolumeInfo, crdvolume *Crdvolume, pathname 
 func CRDVolume2LhVoulme(crdvolume *Crdvolume, vinfo *types.VolumeInfo)  {
 	crdcopy.CRDDeepCopy(vinfo, &crdvolume.Spec)
 }
-/*
-type KVMetadata struct {
-	KVIndex uint64 `json:"-"`
-}
-
-type RecurringJob struct {
-	Name   string           `json:"name"`
-	Type   RecurringJobType `json:"task"`
-	Cron   string           `json:"cron"`
-	Retain int              `json:"retain"`
-}
-
-type VolumeInfo struct {
-	// Attributes
-	Name                string
-	Size                int64 `json:",string"`
-	BaseImage           string
-	FromBackup          string
-	NumberOfReplicas    int
-	StaleReplicaTimeout int
-
-	// Running spec
-	TargetNodeID  string
-	DesireState   VolumeState
-	RecurringJobs []RecurringJob
-
-	// Running state
-	Created  string
-	NodeID   string
-	State    VolumeState
-	Endpoint string
-
-	KVMetadata
-}
-type RecurringJobType string
-
-type VolumeState string
-
-*/
