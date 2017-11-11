@@ -17,15 +17,8 @@ type Crdreplica struct {
 
 
 type CrdReplicasSpec struct {
-	ID         string
-	Type       types.InstanceType
-	Name       string
-	NodeID     string
-	IP         string
-	Running    bool
-	VolumeName string
+	types.InstanceInfo
 
-	types.KVMetadata
 	FailedAt string
 }
 

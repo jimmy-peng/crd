@@ -373,7 +373,7 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 
 		return ret, nil
 	}
-	if key == "/longhorn_manager_test/nodes" &&
+	if key == "/longhorn_manager_test/volumes" &&
 		strings.Contains(key, "/instances/replicas/") {
 
 		ret := []string{}

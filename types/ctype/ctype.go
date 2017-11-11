@@ -17,15 +17,7 @@ type Crdcontroller struct {
 
 
 type CrdControllerSpec struct {
-	ID         string
-	Type       types.InstanceType
-	Name       string
-	NodeID     string
-	IP         string
-	Running    bool
-	VolumeName string
-
-	types.KVMetadata
+	types.InstanceInfo
 
 }
 
