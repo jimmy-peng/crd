@@ -17,7 +17,7 @@ package cclient
 
 import (
 	"github.com/jimmy-peng/crd/types/ctype"
-	"github.com/jimmy-peng/crd/crds/ncrd"
+	"github.com/jimmy-peng/crd/crds/ccrd"
 	apiv1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -25,7 +25,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/runtime"
 	apiextcs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	
+
+
 )
 
 type Crdclient struct {
@@ -37,25 +38,25 @@ type Crdclient struct {
 // This file implement all the (CRUD) client methods we need to access our CRD object
 
 func CrdClient(cl *rest.RESTClient, scheme *runtime.Scheme) *Crdclient {
-	return &Crdclient{cl: cl, ns: apiv1.NamespaceDefault, plural: ncrd.CRDPlural,
+	return &Crdclient{cl: cl, ns: apiv1.NamespaceDefault, plural: ccrd.CRDPlural,
 		codec: runtime.NewParameterCodec(scheme)}
 }
 
-func CreateNodeClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclient {
+func CreateControllerClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclient {
 	// note: if the CRD exist our CreateCRD function is set to exit without an error
-	err := ncrd.CreateNodeCRD(clientset)
+	err := ccrd.CreateControllerCRD(clientset)
 	if err != nil {
 		panic(err)
 	}
 
 	// Wait for the CRD to be created before we use it (only needed if its a new one)
-	err = ncrd.NodeWaitCRDCreateDone(clientset)
+	err = ccrd.ControllerWaitCRDCreateDone(clientset)
 	if err != nil {
 		panic(err)
 	}
 
 	// Create a new clientset which include our CRD schema
-	crdcs, scheme, err := ncrd.NodeNewClient(cfg)
+	crdcs, scheme, err := ccrd.ControllerNewClient(cfg)
 	if err != nil {
 		panic(err)
 	}

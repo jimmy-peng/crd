@@ -93,8 +93,8 @@ func NewCRDBackend(kubeconf string)(*CRDBackend, error)  {
 	lhbackend := &CRDBackend{
 		VolumeClient: vclient.CreateVolumeClient(clientset, config),
 		NodeClient: nclient.CreateNodeClient(clientset, config),
-		ReplicasClient: rclient.CreateVolumeClient(clientset, config),
-		ControllerClient: cclient.CreateNodeClient(clientset, config),
+		ReplicasClient: rclient.CreateReplicaClient(clientset, config),
+		ControllerClient: cclient.CreateControllerClient(clientset, config),
 	}
 
 	CreateVolumeController(lhbackend.VolumeClient)
@@ -137,7 +137,7 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 
 	r, ok := obj.(types.ReplicaInfo)
 	if ok {
-		CRDobj := rtype.Crdreplicas{}
+		CRDobj := rtype.Crdreplica{}
 		validkey := strings.Split(key, "/")[6]
 		rtype.LhReplicas2CRDReplicas(&r, &CRDobj, validkey)
 		result, err := s.ReplicasClient.Create(&CRDobj)
@@ -205,7 +205,7 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 
 	r, ok := obj.(types.ReplicaInfo)
 	if ok {
-		CRDobj := rtype.Crdreplicas{}
+		CRDobj := rtype.Crdreplica{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
 		validkey := strings.Split(key, "/")[6]
 		rtype.LhReplicas2CRDReplicas(&r, &CRDobj, validkey)

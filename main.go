@@ -16,7 +16,7 @@ limitations under the License.
 package main
 
 import (
-	"flag"
+	//"flag"
 	"github.com/jimmy-peng/crd/backend"
 	"fmt"
 	"github.com/rancher/longhorn-manager/types"
@@ -25,56 +25,63 @@ import (
 
 func main() {
 
-	kubeconf := flag.String("kubeconf", "admin.conf", "Path to a kube config. Only required if out-of-cluster.")
-	flag.Parse()
-
-	backend, err := backend.NewCRDBackend(*kubeconf)
+	//kubeconf := flag.String("kubeconf", "admin.conf", "Path to a kube config. Only required if out-of-cluster.")
+	//flag.Parse()
+	kubeconf := ""
+	backend, err := backend.NewCRDBackend(kubeconf)
 
 	fmt.Printf("out CREATED: %#v\n", err)
-	ee := types.VolumeInfo{
+	ee := types.ReplicaInfo{
+		InstanceInfo: types.InstanceInfo{
 			Name:   "lh.volumes-test",
 			NodeID: "12345678",
-			NumberOfReplicas: 3,
+			ID:     "adf",
+		},
 	}
+	//longhorn_manager_test/volumes/bb/instances/replicas/bb-replica-62ef5c8b-f0de-4a94
 
-	result, err := backend.Create( "/longhorn_manager_test/volumes/" + ee.Name + "/base", ee)
+	result, err := backend.Create( "/longhorn_manager_test/volumes/" + ee.Name + "/instances/replicas/" + ee.NodeID, ee)
 	fmt.Printf("out CREATED: %d\n", result)
 
-	e := types.NodeInfo{
-		Name:   "lh.volumes-test",
-		ID: "12345678",
-		IP: "192.168.1.2",
+	e := types.ControllerInfo{
+		InstanceInfo: types.InstanceInfo{
+			Name: "lh.volumes-test",
+			ID:   "123456786",
+			IP:   "192.168.1.2",
+		},
 	}
-	resul, err := backend.Create( "/longhorn_manager_test/nodes/" + e.Name, e)
+	resul, err := backend.Create( "/longhorn_manager_test/nodes/" + e.Name + "/instances/controller", e)
 	fmt.Printf("out CREATED: %d\n", resul)
 
 
-	u := types.VolumeInfo{
-		Name:   "lh.volumes-test",
-		NodeID: "123456789",
-		NumberOfReplicas: 8,
+	u := types.ReplicaInfo{
+		InstanceInfo: types.InstanceInfo{
+			Name:             "lh.volumes-hello",
+			NodeID:           "12345678",
+			ID: "8",
+		},
 	}
 
-	resu, err := backend.Update("/longhorn_manager_test/volumes/lh.volumes-test/base", u, result)
+	resu, err := backend.Update("/longhorn_manager_test/volumes/" + u.Name + "/instances/replicas/"  + u.NodeID, u, result)
 	if err == nil {
 		fmt.Printf("out Update: %d\n", resu)
 	}
 
-	var ss types.VolumeInfo
-	r, err := backend.Get("/longhorn_manager_test/volumes/lh.volumes-test/base", &ss)
+	var ss types.ReplicaInfo
+	r, err := backend.Get("/longhorn_manager_test/volumes/lh.volumes-test/instances/replicas/12345678", &ss)
 
 	if err == nil {
 		fmt.Printf("out GET: %#v %d\n", ss, r)
 	}
 
-	var s types.NodeInfo
-	ns, err := backend.Get("/longhorn_manager_test/nodes/lh.volumes-test", &s)
+	var s types.ControllerInfo
+	ns, err := backend.Get("/longhorn_manager_test/volumes/lh.volumes-test/instances/controller", &s)
 
 	if err == nil {
 		fmt.Printf("out GET: %#v %d\n", s, ns)
 	}
 
-	rl, err := backend.Keys("/longhorn_manager_test/volumes")
+	rl, err := backend.Keys("/longhorn_manager_test/volumes/lh.volumes-test/instances/replicas/12345678")
 	if err == nil {
 		fmt.Printf("out List: %#v\n", rl)
 	}

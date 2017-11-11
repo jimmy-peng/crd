@@ -34,7 +34,7 @@ func CreateReplicasCRD(clientset apiextcs.Interface) error {
 			Scope:   apiextv1beta1.NamespaceScoped,
 			Names:   apiextv1beta1.CustomResourceDefinitionNames{
 				Plural: CRDPlural,
-				Kind:   reflect.TypeOf(rtype.Crdreplicas{}).Name(),
+				Kind:   reflect.TypeOf(rtype.Crdreplica{}).Name(),
 				ShortNames: []string{Shortname},
 			},
 		},
@@ -55,8 +55,8 @@ var schemeGroupVersion = schema.GroupVersion{Group: CRDGroup, Version: CRDVersio
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(schemeGroupVersion,
-		&rtype.Crdreplicas{},
-		&rtype.CrdreplicasList{},
+		&rtype.Crdreplica{},
+		&rtype.CrdreplicaList{},
 	)
 	meta_v1.AddToGroupVersion(scheme, schemeGroupVersion)
 	return nil

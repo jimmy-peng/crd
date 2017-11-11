@@ -40,7 +40,7 @@ func CrdClient(cl *rest.RESTClient, scheme *runtime.Scheme) *Crdclient {
 		codec: runtime.NewParameterCodec(scheme)}
 }
 
-func CreateVolumeClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclient {
+func CreateReplicaClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclient {
 	// note: if the CRD exist our CreateCRD function is set to exit without an error
 	err := rcrd.CreateReplicasCRD(clientset)
 	if err != nil {
@@ -65,16 +65,16 @@ func CreateVolumeClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclie
 
 
 
-func (f *Crdclient) Create(obj *rtype.Crdreplicas) (*rtype.Crdreplicas, error) {
-	var result rtype.Crdreplicas
+func (f *Crdclient) Create(obj *rtype.Crdreplica) (*rtype.Crdreplica, error) {
+	var result rtype.Crdreplica
 	err := f.cl.Post().
 		Namespace(f.ns).Resource(f.plural).
 		Body(obj).Do().Into(&result)
 	return &result, err
 }
 
-func (f *Crdclient) Update(obj *rtype.Crdreplicas, name string) (*rtype.Crdreplicas, error) {
-	result := rtype.Crdreplicas{}
+func (f *Crdclient) Update(obj *rtype.Crdreplica, name string) (*rtype.Crdreplica, error) {
+	result := rtype.Crdreplica{}
 	err := f.cl.Put().Name(name).
 		Namespace(f.ns).Resource(f.plural).
 		Body(obj).Do().Into(&result)
@@ -88,16 +88,16 @@ func (f *Crdclient) Delete(name string, options *meta_v1.DeleteOptions) error {
 		Error()
 }
 
-func (f *Crdclient) Get(name string) (*rtype.Crdreplicas, error) {
-	result := rtype.Crdreplicas{}
+func (f *Crdclient) Get(name string) (*rtype.Crdreplica, error) {
+	result := rtype.Crdreplica{}
 	err := f.cl.Get().
 		Namespace(f.ns).Resource(f.plural).
 		Name(name).Do().Into(&result)
 	return &result, err
 }
 
-func (f *Crdclient) List(opts meta_v1.ListOptions) (*rtype.CrdreplicasList, error) {
-	result := rtype.CrdreplicasList{}
+func (f *Crdclient) List(opts meta_v1.ListOptions) (*rtype.CrdreplicaList, error) {
+	result := rtype.CrdreplicaList{}
 	err := f.cl.Get().
 		Namespace(f.ns).Resource(f.plural).
 		VersionedParams(&opts, f.codec).

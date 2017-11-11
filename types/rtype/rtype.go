@@ -7,7 +7,7 @@ import (
 )
 
 // Definition of our CRD LongHorn Volume class
-type Crdreplicas struct {
+type Crdreplica struct {
 	meta_v1.TypeMeta   `json:",inline"`
 	meta_v1.ObjectMeta `json:"metadata"`
 	Spec               CrdReplicasSpec   `json:"spec"`
@@ -34,17 +34,17 @@ type CrdReplicasStatus struct {
 	Message string `json:"message,omitempty"`
 }
 
-type CrdreplicasList struct {
+type CrdreplicaList struct {
 	meta_v1.TypeMeta             `json:",inline"`
 	meta_v1.ListMeta             `json:"metadata"`
-	Items            []Crdreplicas `json:"items"`
+	Items            []Crdreplica `json:"items"`
 }
 
-func LhReplicas2CRDReplicas(rinfo *types.ReplicaInfo, crdreplica *Crdreplicas, key string) {
+func LhReplicas2CRDReplicas(rinfo *types.ReplicaInfo, crdreplica *Crdreplica, key string) {
 	crdreplica.ObjectMeta.Name = key
 	crdcopy.CRDDeepCopy(&crdreplica.Spec, rinfo)
 }
 
-func CRDReplicas2LhReplicas(crdreplicas *Crdreplicas, rinfo *types.ReplicaInfo) {
+func CRDReplicas2LhReplicas(crdreplicas *Crdreplica, rinfo *types.ReplicaInfo) {
 	crdcopy.CRDDeepCopy(rinfo, &crdreplicas.Spec)
 }
