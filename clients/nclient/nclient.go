@@ -96,6 +96,18 @@ func (f *Crdclient) Get(name string) (*ntype.Crdnode, error) {
 	return &result, err
 }
 
+func (f *Crdclient) GetByVersion(version string) (*ntype.Crdnode, error) {
+
+	nlist, err := f.List(meta_v1.ListOptions{})
+	for _,item := range nlist.Items {
+		if item.ResourceVersion == version {
+			return &item, err
+		}
+	}
+
+	return nil, err
+}
+
 func (f *Crdclient) List(opts meta_v1.ListOptions) (*ntype.CrdnodeList, error) {
 	result := ntype.CrdnodeList{}
 	err := f.cl.Get().

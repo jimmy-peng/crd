@@ -20,6 +20,9 @@ import (
 	"github.com/jimmy-peng/crd/types/rtype"
 	"github.com/jimmy-peng/crd/types/ctype"
 	"github.com/jimmy-peng/crd/clients/cclient"
+	"github.com/jimmy-peng/crd/clients/sclient"
+	"github.com/jimmy-peng/crd/types/stype"
+	"github.com/pkg/errors"
 )
 
 type CRDBackend struct {
@@ -27,6 +30,7 @@ type CRDBackend struct {
 	NodeClient *nclient.Crdclient
 	ReplicasClient *rclient.Crdclient
 	ControllerClient *cclient.Crdclient
+	SettingClient *sclient.Crdclient
 }
 
 // return rest config, if path not specified assume in cluster config
@@ -46,27 +50,11 @@ func CreateVolumeController(client *vclient.Crdclient) {
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				/*
-				r, ok := obj.(*vtype.Crdvolume)
-				if ok {
-					result, err := client.Create(r)
-					if err != nil {
-						if apierrors.IsAlreadyExists(err) {
-							fmt.Printf("ALREADY EXISTS: %#v\n", result)
-							return
-						}
-						fmt.Printf("create voleme error: %#v\n", err)
-					}
-				}
-				*/
+
 				fmt.Printf("add: %s \n", obj)
 			},
 			DeleteFunc: func(obj interface{}) {
-				/*
-				r, ok := obj.(*vtype.Crdvolume)
-				if ok {
-					client.Delete(r.ObjectMeta.Name, &meta_v1.DeleteOptions{})
-				}*/
+
 				fmt.Printf("del: %s \n", obj)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
@@ -95,6 +83,7 @@ func NewCRDBackend(kubeconf string)(*CRDBackend, error)  {
 		NodeClient: nclient.CreateNodeClient(clientset, config),
 		ReplicasClient: rclient.CreateReplicaClient(clientset, config),
 		ControllerClient: cclient.CreateControllerClient(clientset, config),
+		SettingClient: sclient.CreateSettingClient(clientset, config),
 	}
 
 	CreateVolumeController(lhbackend.VolumeClient)
@@ -102,10 +91,10 @@ func NewCRDBackend(kubeconf string)(*CRDBackend, error)  {
 }
 
 func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
-	v, ok := obj.(types.VolumeInfo)
+	v, ok := obj.(*types.VolumeInfo)
 	if ok {
 		CRDobj := vtype.Crdvolume{}
-		vtype.LhVoulme2CRDVolume(&v, &CRDobj)
+		vtype.LhVoulme2CRDVolume(v, &CRDobj)
 		result, err := s.VolumeClient.Create(&CRDobj)
 		if err != nil {
 			fmt.Printf("ERROR: %#v\n", err)
@@ -118,11 +107,11 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
-	n, ok := obj.(types.NodeInfo)
+	n, ok := obj.(*types.NodeInfo)
 	if ok {
 		CRDobj := ntype.Crdnode{}
 		validkey := strings.Split(key, "/")[3]
-		ntype.LhNode2CRDNode(&n, &CRDobj, validkey)
+		ntype.LhNode2CRDNode(n, &CRDobj, validkey)
 		result, err := s.NodeClient.Create(&CRDobj)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
@@ -135,11 +124,11 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 	}
 
 
-	r, ok := obj.(types.ReplicaInfo)
+	r, ok := obj.(*types.ReplicaInfo)
 	if ok {
 		CRDobj := rtype.Crdreplica{}
 		validkey := strings.Split(key, "/")[6]
-		rtype.LhReplicas2CRDReplicas(&r, &CRDobj, validkey)
+		rtype.LhReplicas2CRDReplicas(r, &CRDobj, validkey)
 		result, err := s.ReplicasClient.Create(&CRDobj)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
@@ -152,91 +141,128 @@ func (s *CRDBackend) Create(key string, obj interface{}) (uint64, error) {
 	}
 
 
-		c, ok := obj.(types.ControllerInfo)
-		if ok {
-			CRDobj := ctype.Crdcontroller{}
-			validkey := strings.Split(key, "/")[3]
-			ctype.LhController2CRDController(&c, &CRDobj, validkey)
-			result, err := s.ControllerClient.Create(&CRDobj)
-			if err != nil {
-				if apierrors.IsAlreadyExists(err) {
-					fmt.Printf("ALREADY EXISTS: %#v\n", result)
-				}
-				return 0, err
+	c, ok := obj.(*types.ControllerInfo)
+	if ok {
+		CRDobj := ctype.Crdcontroller{}
+		validkey := strings.Split(key, "/")[3]
+		ctype.LhController2CRDController(c, &CRDobj, validkey)
+		result, err := s.ControllerClient.Create(&CRDobj)
+		if err != nil {
+			if apierrors.IsAlreadyExists(err) {
+				fmt.Printf("ALREADY EXISTS: %#v\n", result)
 			}
-			fmt.Printf("CREATED: %#v\n", result)
-			return strconv.ParseUint(result.ResourceVersion, 10, 64)
+			return 0, err
 		}
+		fmt.Printf("CREATED: %#v\n", result)
+		return strconv.ParseUint(result.ResourceVersion, 10, 64)
+	}
+
+	set, ok := obj.(* types.SettingsInfo)
+	if ok {
+		CRDobj := stype.Crdsetting{}
+		validkey := strings.Split(key, "/")[2]
+		stype.LhSetting2CRDSetting(set, &CRDobj, validkey)
+		result, err := s.SettingClient.Create(&CRDobj)
+		if err != nil {
+			if apierrors.IsAlreadyExists(err) {
+				fmt.Printf("ALREADY EXISTS: %#v\n", result)
+			}
+			return 0, err
+		}
+		fmt.Printf("CREATED: %#v\n", result)
+		return strconv.ParseUint(result.ResourceVersion, 10, 64)
+	}
 	panic(key)
 	return 0, nil
 }
 
 func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, error) {
+	fmt.Println("Update key string", key, index)
 	if index == 0 {
 		return 0, fmt.Errorf("kvstore index cannot be 0")
 	}
-	v, ok := obj.(types.VolumeInfo)
+	v, ok := obj.(*types.VolumeInfo)
 	if ok {
 		CRDobj := vtype.Crdvolume{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
-		vtype.LhVoulme2CRDVolume(&v, &CRDobj)
+		vtype.LhVoulme2CRDVolume(v, &CRDobj)
 		validkey := strings.Split(key, "/")[3]
 		result, err := s.VolumeClient.Update(&CRDobj, validkey)
 		if err != nil {
 			fmt.Printf("UPDATE: %#v\n", err)
 			return 0, err
 		}
+		fmt.Printf("UPDATE: %#v\n", CRDobj)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
-	n, ok := obj.(types.NodeInfo)
+	n, ok := obj.(*types.NodeInfo)
 	if ok {
 		CRDobj := ntype.Crdnode{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
 		validkey := strings.Split(key, "/")[3]
-		ntype.LhNode2CRDNode(&n, &CRDobj, validkey)
+		ntype.LhNode2CRDNode(n, &CRDobj, validkey)
 		result, err := s.NodeClient.Update(&CRDobj, validkey)
 		if err != nil {
 			fmt.Printf("UPDATE: %#v\n", err)
 			return 0, err
 		}
+		fmt.Printf("UPDATE: %#v\n", CRDobj)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
 
-	r, ok := obj.(types.ReplicaInfo)
+	r, ok := obj.(*types.ReplicaInfo)
 	if ok {
 		CRDobj := rtype.Crdreplica{}
 		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
 		validkey := strings.Split(key, "/")[6]
-		rtype.LhReplicas2CRDReplicas(&r, &CRDobj, validkey)
+		rtype.LhReplicas2CRDReplicas(r, &CRDobj, validkey)
 		result, err := s.ReplicasClient.Update(&CRDobj, validkey)
 		if err != nil {
 			fmt.Printf("UPDATE: %#v\n", err)
 			return 0, err
 		}
+		fmt.Printf("UPDATE: %#v\n", CRDobj)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
 
-		c, ok := obj.(types.ControllerInfo)
-		if ok {
-			CRDobj := ctype.Crdcontroller{}
-			CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
-			validkey := strings.Split(key, "/")[3]
-			ctype.LhController2CRDController(&c, &CRDobj, validkey)
-			result, err := s.ControllerClient.Update(&CRDobj, validkey)
-			if err != nil {
-				fmt.Printf("UPDATE: %#v\n", err)
-				return 0, err
-			}
-			return strconv.ParseUint(result.ResourceVersion, 10, 64)
+	c, ok := obj.(*types.ControllerInfo)
+	if ok {
+		CRDobj := ctype.Crdcontroller{}
+		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
+		validkey := strings.Split(key, "/")[3]
+		ctype.LhController2CRDController(c, &CRDobj, validkey)
+		result, err := s.ControllerClient.Update(&CRDobj, validkey)
+		if err != nil {
+			fmt.Printf("UPDATE: %#v\n", err)
+			return 0, err
 		}
+		fmt.Printf("UPDATE: %#v\n", CRDobj)
+		return strconv.ParseUint(result.ResourceVersion, 10, 64)
+	}
+
+
+	ss, ok := obj.(*types.SettingsInfo)
+	if ok {
+		CRDobj := stype.Crdsetting{}
+		CRDobj.ResourceVersion = strconv.FormatUint(index, 10)
+		validkey := strings.Split(key, "/")[2]
+		stype.LhSetting2CRDSetting(ss, &CRDobj, validkey)
+		result, err := s.SettingClient.Update(&CRDobj, validkey)
+		if err != nil {
+			fmt.Printf("UPDATE: %#v\n", err)
+			return 0, err
+		}
+		fmt.Printf("UPDATE: %#v\n", CRDobj)
+		return strconv.ParseUint(result.ResourceVersion, 10, 64)
+	}
 	panic(key)
 	return 0, nil
 }
 
 func (s *CRDBackend) Delete(key string) error {
-
+	fmt.Println("Delete key string %s", key)
 	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
 		strings.HasSuffix(key, "/base") {
 		validkey := strings.Split(key, "/")[3]
@@ -265,62 +291,124 @@ func (s *CRDBackend) Delete(key string) error {
 		}
 	}
 
-		if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
-			strings.HasSuffix(key, "/instances/controller") {
-			validkey := strings.Split(key, "/")[3]
-			err := s.ControllerClient.Delete(validkey, &meta_v1.DeleteOptions{})
-			if err != nil {
-				return err
-			}
+	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
+		strings.HasSuffix(key, "/instances/controller") {
+		validkey := strings.Split(key, "/")[3]
+		err := s.ControllerClient.Delete(validkey, &meta_v1.DeleteOptions{})
+		if err != nil {
+			return err
 		}
+	}
+
+	if key == "/longhorn_manager_test/settings" {
+		validkey := strings.Split(key, "/")[2]
+		err := s.SettingClient.Delete(validkey, &meta_v1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
 
 	panic(key)
 	return nil
 }
 
 func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
+	fmt.Println("GET key string %s", key)
 	v, ok := obj.(* types.VolumeInfo)
 	if ok {
-		validkey := strings.Split(key, "/")[3]
-		result, err := s.VolumeClient.Get(validkey)
-		vtype.CRDVolume2LhVoulme(result, v)
-		if err != nil {
-			return 0, err
+		var result *vtype.Crdvolume
+		var err error
+		if strings.Contains(key, "volumes") {
+			validkey := strings.Split(key, "/")[3]
+			result, err = s.VolumeClient.Get(validkey)
+		} else {
+			result, err = s.VolumeClient.GetByVersion(key)
 		}
+
+		if err != nil || result == nil {
+			return 0, errors.New("crd not found")
+		}
+
+		vtype.CRDVolume2LhVoulme(result, v)
+
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
 	n, ok := obj.(* types.NodeInfo)
 	if ok {
-		validkey := strings.Split(key, "/")[3]
-		result, err := s.NodeClient.Get(validkey)
-		ntype.CRDNode2LhNode(result, n)
-		if err != nil {
-			return 0, err
+		var result *ntype.Crdnode
+		var err error
+		if strings.Contains(key, "nodes") {
+			validkey := strings.Split(key, "/")[3]
+			result, err = s.NodeClient.Get(validkey)
+		} else {
+			result, err = s.NodeClient.GetByVersion(key)
 		}
+
+		if err != nil || result == nil {
+			return 0, errors.New("crd not found")
+		}
+		ntype.CRDNode2LhNode(result, n)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
+
 	}
 
 	r, ok := obj.(* types.ReplicaInfo)
 	if ok {
-		validkey := strings.Split(key, "/")[6]
-		result, err := s.ReplicasClient.Get(validkey)
-		rtype.CRDReplicas2LhReplicas(result, r)
-		if err != nil {
-			return 0, err
+		var result *rtype.Crdreplica
+		var err error
+		if strings.Contains(key, "volumes") {
+			validkey := strings.Split(key, "/")[6]
+			result, err = s.ReplicasClient.Get(validkey)
+		} else {
+			result, err = s.ReplicasClient.GetByVersion(key)
 		}
+		if err != nil || result == nil{
+			return 0, errors.New("crd not found")
+		}
+
+		rtype.CRDReplicas2LhReplicas(result, r)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
 
 	c, ok := obj.(* types.ControllerInfo)
 	if ok {
-		validkey := strings.Split(key, "/")[3]
-		result, err := s.ControllerClient.Get(validkey)
-		ctype.CRDController2LhController(result, c)
-		if err != nil {
-			return 0, err
+		var result *ctype.Crdcontroller
+		var err error
+
+		if strings.Contains(key, "volumes") {
+			validkey := strings.Split(key, "/")[3]
+			result, err = s.ControllerClient.Get(validkey)
+		} else {
+			result, err = s.ControllerClient.GetByVersion(key)
 		}
+
+		if err != nil || result == nil{
+			return 0, errors.New("crd not found")
+		}
+
+		ctype.CRDController2LhController(result, c)
+		return strconv.ParseUint(result.ResourceVersion, 10, 64)
+	}
+
+	ss, ok := obj.(* types.SettingsInfo)
+	if ok {
+		var result *stype.Crdsetting
+		var err error
+
+		if strings.Contains(key, "settings") {
+			validkey := strings.Split(key, "/")[2]
+			result, err = s.SettingClient.Get(validkey)
+		} else {
+			result, err = s.SettingClient.GetByVersion(key)
+		}
+
+		if err != nil || result == nil{
+			return 0, errors.New("crd not found")
+		}
+
+		stype.CRDSetting2LhSetting(result, ss)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 	panic(key)
@@ -328,7 +416,11 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 }
 
 func (s *CRDBackend) IsNotFoundError(err error) bool {
-	return apierrors.IsNotFound(err)
+	if strings.Contains(err.Error(), "crd not found"){
+		return true
+	} else {
+		return false
+	}
 }
 
 
@@ -374,7 +466,7 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 		return ret, nil
 	}
 	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
-		strings.Contains(key, "/instances/replicas/") {
+		strings.Contains(key, "/instances/replicas") {
 
 		ret := []string{}
 		r, err := s.ReplicasClient.List(meta_v1.ListOptions{})
@@ -399,6 +491,27 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 		strings.HasSuffix(key, "/instances/controller") {
 		ret := []string{}
 		r, err := s.ControllerClient.List(meta_v1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		if len(r.Items) <= 0 {
+			return nil, nil
+		}
+		fmt.Printf("List: %#v\n", r)
+		for _, item := range r.Items {
+			if err != nil {
+				return nil, err
+			}
+			ret = append(ret, item.ResourceVersion)
+		}
+
+		return ret, nil
+	}
+
+
+	if key == "/longhorn_manager_test/settings" {
+		ret := []string{}
+		r, err := s.SettingClient.List(meta_v1.ListOptions{})
 		if err != nil {
 			return nil, err
 		}

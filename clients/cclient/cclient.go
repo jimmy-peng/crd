@@ -25,8 +25,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/runtime"
 	apiextcs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-
-
 )
 
 type Crdclient struct {
@@ -96,6 +94,18 @@ func (f *Crdclient) Get(name string) (*ctype.Crdcontroller, error) {
 		Namespace(f.ns).Resource(f.plural).
 		Name(name).Do().Into(&result)
 	return &result, err
+}
+
+
+func (f *Crdclient) GetByVersion(version string) (*ctype.Crdcontroller, error) {
+
+	clist, err := f.List(meta_v1.ListOptions{})
+	for _,item := range clist.Items {
+		if item.ResourceVersion == version {
+			return &item, err
+		}
+	}
+	return nil, err
 }
 
 func (f *Crdclient) List(opts meta_v1.ListOptions) (*ctype.CrdcontrollerList, error) {

@@ -96,6 +96,18 @@ func (f *Crdclient) Get(name string) (*vtype.Crdvolume, error) {
 	return &result, err
 }
 
+
+func (f *Crdclient) GetByVersion(version string) (*vtype.Crdvolume, error) {
+
+	vlist, err := f.List(meta_v1.ListOptions{})
+	for _,item := range vlist.Items {
+		if item.ResourceVersion == version {
+			return &item, err
+		}
+	}
+	return nil, err
+}
+
 func (f *Crdclient) List(opts meta_v1.ListOptions) (*vtype.CrdvolumeList, error) {
 	result := vtype.CrdvolumeList{}
 	err := f.cl.Get().

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package rclient
+package sclient
 
 import (
 	apiv1 "k8s.io/api/core/v1"
@@ -23,8 +23,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/runtime"
 	apiextcs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"github.com/jimmy-peng/crd/crds/rcrd"
-	"github.com/jimmy-peng/crd/types/rtype"
+	"github.com/jimmy-peng/crd/crds/scrd"
+	"github.com/jimmy-peng/crd/types/stype"
 )
 
 type Crdclient struct {
@@ -36,25 +36,25 @@ type Crdclient struct {
 // This file implement all the (CRUD) client methods we need to access our CRD object
 
 func CrdClient(cl *rest.RESTClient, scheme *runtime.Scheme) *Crdclient {
-	return &Crdclient{cl: cl, ns: apiv1.NamespaceDefault, plural: rcrd.CRDPlural,
+	return &Crdclient{cl: cl, ns: apiv1.NamespaceDefault, plural: scrd.CRDPlural,
 		codec: runtime.NewParameterCodec(scheme)}
 }
 
-func CreateReplicaClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclient {
+func CreateSettingClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdclient {
 	// note: if the CRD exist our CreateCRD function is set to exit without an error
-	err := rcrd.CreateReplicasCRD(clientset)
+	err := scrd.CreateSettingCRD(clientset)
 	if err != nil {
 		panic(err)
 	}
 
 	// Wait for the CRD to be created before we use it (only needed if its a new one)
-	err = rcrd.ReplicasWaitCRDCreateDone(clientset)
+	err = scrd.SettingWaitCRDCreateDone(clientset)
 	if err != nil {
 		panic(err)
 	}
 
 	// Create a new clientset which include our CRD schema
-	crdcs, scheme, err := rcrd.ReplicasNewClient(cfg)
+	crdcs, scheme, err := scrd.SettingNewClient(cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -65,16 +65,16 @@ func CreateReplicaClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdcli
 
 
 
-func (f *Crdclient) Create(obj *rtype.Crdreplica) (*rtype.Crdreplica, error) {
-	var result rtype.Crdreplica
+func (f *Crdclient) Create(obj *stype.Crdsetting) (*stype.Crdsetting, error) {
+	var result stype.Crdsetting
 	err := f.cl.Post().
 		Namespace(f.ns).Resource(f.plural).
 		Body(obj).Do().Into(&result)
 	return &result, err
 }
 
-func (f *Crdclient) Update(obj *rtype.Crdreplica, name string) (*rtype.Crdreplica, error) {
-	result := rtype.Crdreplica{}
+func (f *Crdclient) Update(obj *stype.Crdsetting, name string) (*stype.Crdsetting, error) {
+	result := stype.Crdsetting{}
 	err := f.cl.Put().Name(name).
 		Namespace(f.ns).Resource(f.plural).
 		Body(obj).Do().Into(&result)
@@ -88,8 +88,8 @@ func (f *Crdclient) Delete(name string, options *meta_v1.DeleteOptions) error {
 		Error()
 }
 
-func (f *Crdclient) Get(name string) (*rtype.Crdreplica, error) {
-	result := rtype.Crdreplica{}
+func (f *Crdclient) Get(name string) (*stype.Crdsetting, error) {
+	result := stype.Crdsetting{}
 	err := f.cl.Get().
 		Namespace(f.ns).Resource(f.plural).
 		Name(name).Do().Into(&result)
@@ -97,10 +97,10 @@ func (f *Crdclient) Get(name string) (*rtype.Crdreplica, error) {
 }
 
 
-func (f *Crdclient) GetByVersion(version string) (*rtype.Crdreplica, error) {
+func (f *Crdclient) GetByVersion(version string) (*stype.Crdsetting, error) {
 
-	rlist, err := f.List(meta_v1.ListOptions{})
-	for _,item := range rlist.Items {
+	slist, err := f.List(meta_v1.ListOptions{})
+	for _,item := range slist.Items {
 		if item.ResourceVersion == version {
 			return &item, err
 		}
@@ -108,8 +108,8 @@ func (f *Crdclient) GetByVersion(version string) (*rtype.Crdreplica, error) {
 	return nil, err
 }
 
-func (f *Crdclient) List(opts meta_v1.ListOptions) (*rtype.CrdreplicaList, error) {
-	result := rtype.CrdreplicaList{}
+func (f *Crdclient) List(opts meta_v1.ListOptions) ( *stype.CrdsettingList, error) {
+	result := stype.CrdsettingList{}
 	err := f.cl.Get().
 		Namespace(f.ns).Resource(f.plural).
 		VersionedParams(&opts, f.codec).
