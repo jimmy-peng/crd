@@ -23,6 +23,7 @@ import (
 	"github.com/jimmy-peng/crd/clients/sclient"
 	"github.com/jimmy-peng/crd/types/stype"
 	"github.com/pkg/errors"
+	"github.com/rancher/longhorn-manager/manager"
 )
 
 type CRDBackend struct {
@@ -41,23 +42,45 @@ func getClientConfig(kubeconfig string) (*rest.Config, error) {
 	return rest.InClusterConfig()
 }
 
-func CreateVolumeController(client *vclient.Crdclient) {
+
+func CreateVolumeController(m *manager.VolumeManager, b *CRDBackend ) {
 	// Example Controller
 	// Watch for changes in Example objects and fire Add, Delete, Update callbacks
 	_, controller := cache.NewInformer(
-		client.NewListWatch(),
+		b.VolumeClient.NewListWatch(),
 		&vtype.Crdvolume{},
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
+				v, ok := obj.(*vtype.Crdvolume)
+				if ok {
+					var result types.VolumeInfo
+					vtype.CRDVolume2LhVoulme(v, &result)
+					m.CRDVolumeCreate(&result, v.ObjectMeta.Name)
+					fmt.Printf("add get: %#v \n", result)
+				}
 
-				fmt.Printf("add: %s \n", obj)
 			},
 			DeleteFunc: func(obj interface{}) {
-
+				v, ok := obj.(*vtype.Crdvolume)
+				if ok {
+					var result types.VolumeInfo
+					vtype.CRDVolume2LhVoulme(v, &result)
+					m.CRDVolumeDelete(&result)
+				}
 				fmt.Printf("del: %s \n", obj)
 			},
+
 			UpdateFunc: func(oldObj, newObj interface{}) {
+				nv := newObj.(*vtype.Crdvolume)
+				ov, ok := oldObj.(*vtype.Crdvolume)
+				if ok && ov.Spec.DesireState != nv.Spec.DesireState {
+					var or types.VolumeInfo
+					var nr types.VolumeInfo
+					vtype.CRDVolume2LhVoulme(ov, &or)
+					vtype.CRDVolume2LhVoulme(nv, &nr)
+					m.CRDVolumeAttachDetach(&or, &nr)
+				}
 				fmt.Printf("Update old: %s \n      New: %s\n", oldObj, newObj)
 			},
 		},
@@ -86,7 +109,7 @@ func NewCRDBackend(kubeconf string)(*CRDBackend, error)  {
 		SettingClient: sclient.CreateSettingClient(clientset, config),
 	}
 
-	CreateVolumeController(lhbackend.VolumeClient)
+	//CreateVolumeController(lhbackend.VolumeClient)
 	return lhbackend, nil
 }
 
@@ -191,7 +214,7 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		if err != nil {
 			return 0, err
 		}
-		//fmt.Printf("UPDATE: %#v\n", CRDobj)
+		//fmt.Printf("UPDATE: %#v\n", result)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 	n, ok := obj.(*types.NodeInfo)

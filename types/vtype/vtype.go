@@ -20,11 +20,11 @@ Status             CrdVolumeStatus `json:"status,omitempty"`
 type CrdVolumeSpec struct {
 	// Attributes
 	Name                string 	`json:"name"`
-	Size                int64  	`json:",string"`
+	Size                int64  	`json:"size, int64"`
 	BaseImage           string 	`json:"baseimage,omitempty"`
 	FromBackup          string 	`json:"frombackup,omitempty"`
-	NumberOfReplicas    int    	`json:"numreplicas,omitempty"`
-	StaleReplicaTimeout int	   	`json:"stalereplicatimeout,omitempty"`
+	NumberOfReplicas    int    	`json:"numreplicas, int"`
+	StaleReplicaTimeout int	   	`json:"stalereplicatimeout, int"`
 
 	// Running spec
 	TargetNodeID  string		`json:"targetnodeid,omitempty"`
