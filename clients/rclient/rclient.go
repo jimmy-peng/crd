@@ -100,11 +100,13 @@ func (f *Crdclient) Get(name string) (*rtype.Crdreplica, error) {
 func (f *Crdclient) GetByVersion(version string) (*rtype.Crdreplica, error) {
 
 	rlist, err := f.List(meta_v1.ListOptions{})
+
 	for _,item := range rlist.Items {
 		if item.ResourceVersion == version {
 			return &item, err
 		}
 	}
+
 	return nil, err
 }
 

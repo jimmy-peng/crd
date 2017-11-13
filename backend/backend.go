@@ -189,10 +189,9 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		validkey := strings.Split(key, "/")[3]
 		result, err := s.VolumeClient.Update(&CRDobj, validkey)
 		if err != nil {
-			fmt.Printf("UPDATE: %#v\n", err)
 			return 0, err
 		}
-		fmt.Printf("UPDATE: %#v\n", CRDobj)
+		//fmt.Printf("UPDATE: %#v\n", CRDobj)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 	n, ok := obj.(*types.NodeInfo)
@@ -203,10 +202,9 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		ntype.LhNode2CRDNode(n, &CRDobj, validkey)
 		result, err := s.NodeClient.Update(&CRDobj, validkey)
 		if err != nil {
-			fmt.Printf("UPDATE: %#v\n", err)
 			return 0, err
 		}
-		fmt.Printf("UPDATE: %#v\n", CRDobj)
+		//fmt.Printf("UPDATE: %#v\n", CRDobj)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
@@ -219,10 +217,10 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		rtype.LhReplicas2CRDReplicas(r, &CRDobj, validkey)
 		result, err := s.ReplicasClient.Update(&CRDobj, validkey)
 		if err != nil {
-			fmt.Printf("UPDATE: %#v\n", err)
+
 			return 0, err
 		}
-		fmt.Printf("UPDATE: %#v\n", CRDobj)
+	//	fmt.Printf("UPDATE: %#v\n", CRDobj)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
@@ -235,10 +233,10 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		ctype.LhController2CRDController(c, &CRDobj, validkey)
 		result, err := s.ControllerClient.Update(&CRDobj, validkey)
 		if err != nil {
-			fmt.Printf("UPDATE: %#v\n", err)
+
 			return 0, err
 		}
-		fmt.Printf("UPDATE: %#v\n", CRDobj)
+	//	fmt.Printf("UPDATE: %#v\n", CRDobj)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
@@ -251,10 +249,9 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 		stype.LhSetting2CRDSetting(ss, &CRDobj, validkey)
 		result, err := s.SettingClient.Update(&CRDobj, validkey)
 		if err != nil {
-			fmt.Printf("UPDATE: %#v\n", err)
 			return 0, err
 		}
-		fmt.Printf("UPDATE: %#v\n", CRDobj)
+	//	fmt.Printf("UPDATE: %#v\n", CRDobj)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 	panic(key)
@@ -313,7 +310,7 @@ func (s *CRDBackend) Delete(key string) error {
 }
 
 func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
-	fmt.Println("GET key string %s", key)
+	fmt.Println("GET key string", key)
 	v, ok := obj.(* types.VolumeInfo)
 	if ok {
 		var result *vtype.Crdvolume
@@ -322,7 +319,8 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 			validkey := strings.Split(key, "/")[3]
 			result, err = s.VolumeClient.Get(validkey)
 		} else {
-			result, err = s.VolumeClient.GetByVersion(key)
+			validkey := strings.Split(key, "/")[0]
+			result, err = s.VolumeClient.GetByVersion(validkey)
 		}
 
 		if err != nil || result == nil {
@@ -330,7 +328,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		}
 
 		vtype.CRDVolume2LhVoulme(result, v)
-
+		fmt.Printf("GET volume string %#v \n\n", v)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
@@ -342,6 +340,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 			validkey := strings.Split(key, "/")[3]
 			result, err = s.NodeClient.Get(validkey)
 		} else {
+
 			result, err = s.NodeClient.GetByVersion(key)
 		}
 
@@ -349,6 +348,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 			return 0, errors.New("crd not found")
 		}
 		ntype.CRDNode2LhNode(result, n)
+		fmt.Printf("GET node string %#v \n\n", n)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 
 	}
@@ -368,6 +368,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		}
 
 		rtype.CRDReplicas2LhReplicas(result, r)
+		fmt.Printf("GET replica string %#v \n\n", r)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
