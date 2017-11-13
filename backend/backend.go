@@ -328,7 +328,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		}
 
 		vtype.CRDVolume2LhVoulme(result, v)
-		fmt.Printf("GET volume string %#v \n\n", v)
+		//fmt.Printf("GET volume string %#v \n\n", v)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
@@ -348,7 +348,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 			return 0, errors.New("crd not found")
 		}
 		ntype.CRDNode2LhNode(result, n)
-		fmt.Printf("GET node string %#v \n\n", n)
+		//fmt.Printf("GET node string %#v \n\n", n)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 
 	}
@@ -368,7 +368,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		}
 
 		rtype.CRDReplicas2LhReplicas(result, r)
-		fmt.Printf("GET replica string %#v \n\n", r)
+		//fmt.Printf("GET replica string %#v \n\n", r)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
@@ -388,7 +388,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		if err != nil || result == nil{
 			return 0, errors.New("crd not found")
 		}
-
+		fmt.Printf("GET controller string %#v \n\n", c)
 		ctype.CRDController2LhController(result, c)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
@@ -408,7 +408,7 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		if err != nil || result == nil{
 			return 0, errors.New("crd not found")
 		}
-
+		fmt.Printf("GET setting string %#v \n\n", ss)
 		stype.CRDSetting2LhSetting(result, ss)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
@@ -435,7 +435,7 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 		if len(r.Items) <= 0 {
 			return nil, nil
 		}
-		fmt.Printf("List: %#v\n", r)
+		//fmt.Printf("List: %#v\n", r)
 		for _, item := range r.Items {
 			if err != nil {
 				return nil, err
@@ -456,7 +456,7 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 		if len(r.Items) <= 0 {
 			return nil, nil
 		}
-		fmt.Printf("List: %#v\n", r)
+		//fmt.Printf("List: %#v\n", r)
 		for _, item := range r.Items {
 			if err != nil {
 				return nil, err
@@ -477,7 +477,7 @@ func (s *CRDBackend) Keys(key string) ([]string, error) {
 		if len(r.Items) <= 0 {
 			return nil, nil
 		}
-		fmt.Printf("List: %#v\n", r)
+		//fmt.Printf("List: %#v\n", r)
 		for _, item := range r.Items {
 			if err != nil {
 				return nil, err
