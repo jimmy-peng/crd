@@ -79,7 +79,12 @@ func CreateVolumeController(m *manager.VolumeManager, b *CRDBackend ) {
 					var nr types.VolumeInfo
 					vtype.CRDVolume2LhVoulme(ov, &or)
 					vtype.CRDVolume2LhVoulme(nv, &nr)
-					m.CRDVolumeAttachDetach(&or, &nr)
+					kindex, err := strconv.ParseUint(nv.ObjectMeta.ResourceVersion, 10, 64)
+					if err != nil {
+						fmt.Println("Parse index error")
+						return
+					}
+					m.CRDVolumeAttachDetach(&or, &nr, kindex)
 				}
 				fmt.Printf("Update old: %s \n      New: %s\n", oldObj, newObj)
 			},
