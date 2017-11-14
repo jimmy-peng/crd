@@ -52,7 +52,6 @@ func CreateVolumeController(m *manager.VolumeManager, b *CRDBackend ) {
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-
 				v, ok := obj.(*vtype.Crdvolume)
 				if ok && v.Spec.TargetNodeID == "" {
 					var result types.VolumeInfo
@@ -60,7 +59,6 @@ func CreateVolumeController(m *manager.VolumeManager, b *CRDBackend ) {
 					m.CRDVolumeCreate(&result, v.ObjectMeta.Name)
 					fmt.Printf("add get: %#v \n", result)
 				}
-
 			},
 
 			DeleteFunc: func(obj interface{}) {
@@ -290,7 +288,8 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 
 func (s *CRDBackend) Delete(key string) error {
 	fmt.Println("Delete key string %s", key)
-	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") {
+	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
+		! strings.Contains(key, "/instances/replicas/") {
 		validkey := strings.Split(key, "/")[3]
 		err := s.VolumeClient.Delete(validkey, &meta_v1.DeleteOptions{})
 		if err != nil {
