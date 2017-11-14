@@ -52,8 +52,9 @@ func CreateVolumeController(m *manager.VolumeManager, b *CRDBackend ) {
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
+
 				v, ok := obj.(*vtype.Crdvolume)
-				if ok {
+				if ok && v.Spec.TargetNodeID == "" {
 					var result types.VolumeInfo
 					vtype.CRDVolume2LhVoulme(v, &result)
 					m.CRDVolumeCreate(&result, v.ObjectMeta.Name)
@@ -61,6 +62,7 @@ func CreateVolumeController(m *manager.VolumeManager, b *CRDBackend ) {
 				}
 
 			},
+
 			DeleteFunc: func(obj interface{}) {
 				v, ok := obj.(*vtype.Crdvolume)
 				if ok {
@@ -288,8 +290,7 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 
 func (s *CRDBackend) Delete(key string) error {
 	fmt.Println("Delete key string %s", key)
-	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
-		strings.HasSuffix(key, "/base") {
+	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") {
 		validkey := strings.Split(key, "/")[3]
 		err := s.VolumeClient.Delete(validkey, &meta_v1.DeleteOptions{})
 		if err != nil {
@@ -314,6 +315,7 @@ func (s *CRDBackend) Delete(key string) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
 	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
@@ -323,6 +325,7 @@ func (s *CRDBackend) Delete(key string) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
 	if key == "/longhorn_manager_test/settings" {
@@ -331,6 +334,7 @@ func (s *CRDBackend) Delete(key string) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
 	panic(key)
