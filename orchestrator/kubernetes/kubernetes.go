@@ -94,14 +94,23 @@ func NewKuberOrchestrator(cfg *Config) (*Kuber, error) {
 	return kube, nil
 }
 
+func (k *Kuber) getCurrentNodePod() (*apiv1.Pod, error) {
+	podName, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+	pod, err := k.cli.CoreV1().Pods(apiv1.NamespaceDefault).Get(podName, meta_v1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return pod, nil
+}
+
 func (k *Kuber) updateNetwork() error {
 
 	k.Network = "overlay"
-	podName, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-	pod, err := k.cli.CoreV1().Pods(apiv1.NamespaceDefault).Get(podName, meta_v1.GetOptions{})
+	pod, err := k.getCurrentNodePod()
 	if err != nil {
 		return err
 	}
@@ -171,6 +180,14 @@ func (k *Kuber) CreateController(req *orchestrator.Request) (instance *orchestra
 	}
 	cmd = append(cmd, req.VolumeName)
 
+
+	podHost, err := k.getCurrentNodePod()
+
+	if err != nil {
+		logrus.Errorf("fail to get daemonset pod info")
+		return nil, err
+	}
+
 	privilege := true
 
 	pod := &apiv1.Pod{
@@ -178,6 +195,9 @@ func (k *Kuber) CreateController(req *orchestrator.Request) (instance *orchestra
 			Name: req.InstanceName,
 		},
 		Spec: apiv1.PodSpec {
+			NodeSelector:map[string]string{
+				"kubernetes.io/hostname":podHost.Spec.NodeName,
+				},
 			Containers: []apiv1.Container{
 				{
 					Name:  req.InstanceName,
@@ -253,11 +273,11 @@ func (k *Kuber) CreateController(req *orchestrator.Request) (instance *orchestra
 		return nil, err
 	}
 
-/*
+
 	if err := util.WaitForDevice(k.getDeviceName(req.VolumeName), WaitDeviceTimeout); err != nil {
 		return nil, err
 	}
-*/
+
 	return instance, nil
 }
 
@@ -289,6 +309,14 @@ func (k *Kuber) CreateReplica(req *orchestrator.Request) (instance *orchestrator
 	}
 	cmd = append(cmd, "/volume")
 
+
+	podHost, err := k.getCurrentNodePod()
+
+	if err != nil {
+		logrus.Errorf("fail to get daemonset pod info")
+		return nil, err
+	}
+
 	privilege := true
 
 	pod := &apiv1.Pod{
@@ -296,6 +324,9 @@ func (k *Kuber) CreateReplica(req *orchestrator.Request) (instance *orchestrator
 			Name: req.InstanceName,
 		},
 		Spec: apiv1.PodSpec {
+			NodeSelector:map[string]string{
+				"kubernetes.io/hostname":podHost.Spec.NodeName,
+			},
 			Containers: []apiv1.Container{
 				{
 					Name:  req.InstanceName,
