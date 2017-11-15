@@ -24,6 +24,7 @@ import (
 	"github.com/jimmy-peng/crd/types/stype"
 	"github.com/pkg/errors"
 	"github.com/rancher/longhorn-manager/manager"
+
 )
 
 type CRDBackend struct {
@@ -52,29 +53,34 @@ func CreateVolumeController(m *manager.VolumeManager, b *CRDBackend ) {
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
+
 				v, ok := obj.(*vtype.Crdvolume)
 				if ok && v.Spec.TargetNodeID == "" {
 					var result types.VolumeInfo
 					vtype.CRDVolume2LhVoulme(v, &result)
 					m.CRDVolumeCreate(&result, v.ObjectMeta.Name)
-					fmt.Printf("add get: %#v \n", result)
+					fmt.Printf("add get: %#v \n", obj)
 				}
+
 			},
 
 			DeleteFunc: func(obj interface{}) {
+
 				v, ok := obj.(*vtype.Crdvolume)
 				if ok {
 					var result types.VolumeInfo
 					vtype.CRDVolume2LhVoulme(v, &result)
 					m.CRDVolumeDelete(&result)
+					fmt.Printf("del: %s \n", obj)
 				}
-				fmt.Printf("del: %s \n", obj)
+
 			},
 
 			UpdateFunc: func(oldObj, newObj interface{}) {
+
 				nv := newObj.(*vtype.Crdvolume)
 				ov, ok := oldObj.(*vtype.Crdvolume)
-				if ok && ov.Spec.DesireState != nv.Spec.DesireState {
+				if ok && nv.Spec.KVIndex != 0 {
 					var or types.VolumeInfo
 					var nr types.VolumeInfo
 					vtype.CRDVolume2LhVoulme(ov, &or)
@@ -85,8 +91,9 @@ func CreateVolumeController(m *manager.VolumeManager, b *CRDBackend ) {
 						return
 					}
 					m.CRDVolumeAttachDetach(&or, &nr, kindex)
+					fmt.Printf("Update old: %s \n      New: %s\n", oldObj, newObj)
 				}
-				fmt.Printf("Update old: %s \n      New: %s\n", oldObj, newObj)
+
 			},
 		},
 	)
@@ -288,24 +295,6 @@ func (s *CRDBackend) Update(key string, obj interface{}, index uint64) (uint64, 
 
 func (s *CRDBackend) Delete(key string) error {
 	fmt.Println("Delete key string %s", key)
-	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
-		! strings.Contains(key, "/instances/replicas/") {
-		validkey := strings.Split(key, "/")[3]
-		err := s.VolumeClient.Delete(validkey, &meta_v1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	if strings.HasPrefix(key, "/longhorn_manager_test/nodes/") {
-		validkey := strings.Split(key, "/")[3]
-		err := s.NodeClient.Delete(validkey, &meta_v1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-		return nil
-	}
 
 	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") &&
 		strings.Contains(key, "/instances/replicas/") {
@@ -321,6 +310,24 @@ func (s *CRDBackend) Delete(key string) error {
 		strings.HasSuffix(key, "/instances/controller") {
 		validkey := strings.Split(key, "/")[3]
 		err := s.ControllerClient.Delete(validkey, &meta_v1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if strings.HasPrefix(key, "/longhorn_manager_test/volumes/") {
+		validkey := strings.Split(key, "/")[3]
+		err := s.VolumeClient.Delete(validkey, &meta_v1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if strings.HasPrefix(key, "/longhorn_manager_test/nodes/") {
+		validkey := strings.Split(key, "/")[3]
+		err := s.NodeClient.Delete(validkey, &meta_v1.DeleteOptions{})
 		if err != nil {
 			return err
 		}

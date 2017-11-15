@@ -65,6 +65,7 @@ func CreateReplicaClient(clientset apiextcs.Interface, cfg *rest.Config) *Crdcli
 
 
 
+
 func (f *Crdclient) Create(obj *rtype.Crdreplica) (*rtype.Crdreplica, error) {
 	var result rtype.Crdreplica
 	err := f.cl.Post().
