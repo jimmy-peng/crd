@@ -17,9 +17,12 @@ package main
 
 import (
 	//"flag"
-	"github.com/jimmy-peng/crd/backend"
+	//"github.com/jimmy-peng/crd/backend"
 	"fmt"
-	"github.com/rancher/longhorn-manager/types"
+	//"github.com/rancher/longhorn-manager/types"
+	"github.com/jimmy-peng/crd/orchestrator/kubernetes"
+	//"github.com/rancher/longhorn-manager/orchestrator/docker"
+	"github.com/rancher/longhorn-manager/orchestrator"
 )
 
 
@@ -27,7 +30,8 @@ func main() {
 
 	//kubeconf := flag.String("kubeconf", "admin.conf", "Path to a kube config. Only required if out-of-cluster.")
 	//flag.Parse()
-	kubeconf := ""
+	//kubeconf := ""
+	/*
 	backend, err := backend.NewCRDBackend(kubeconf)
 
 	fmt.Printf("out CREATED: %#v\n", err)
@@ -84,7 +88,7 @@ func main() {
 	rl, err := backend.Keys("/longhorn_manager_test/volumes/lh.volumes-test/instances/replicas/12345678")
 	if err == nil {
 		fmt.Printf("out List: %#v\n", rl)
-	}
+	}*/
 /*
 	er := backend.Delete("/longhorn_manager_test/volumes/lh.volumes-test/base")
 	if er != nil {
@@ -96,5 +100,43 @@ func main() {
 		fmt.Printf("out after List: %#v\n", a)
 	}*/
 	// Wait forever
+
+	cfg := &kubernetes.Config{
+		EngineImage: "rancher/longhorn-engine:17e33fc",
+		Network:     "overlay",
+	}
+
+	kube, err := kubernetes.NewKuberOrchestrator(cfg)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Get kuber %#v \n %#v \n", kube, kube.GetCurrentNode())
+
+	req := orchestrator.Request{
+		NodeID: "fa2484a0-719e-4ffb-bd70-2f90f033ce6a",
+		InstanceName: "kk-replica-42d59dee-53f0-40d4",
+		VolumeName:"kk",
+		VolumeSize: 2147483648,
+	}
+	instance, err := kube.CreateReplica(&req)
+	if err != nil {
+		panic(err)
+	}
+
+	creq := orchestrator.Request{
+		NodeID: "fa2484a0-719e-4ffb-bd70-2f90f033ce6a",
+		InstanceName: "kk-controller",
+		VolumeName:"kk",
+		VolumeSize: 2147483648,
+		ReplicaURLs: []string{
+			"tcp://" + instance.IP +":9502",
+			},
+	}
+	fmt.Printf("Instance %v\n", instance)
+	instances, err := kube.CreateController(&creq)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Instance %v\n", instances)
 	select {}
 }
