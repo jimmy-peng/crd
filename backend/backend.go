@@ -426,8 +426,8 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		if err != nil || result == nil{
 			return 0, errors.New("crd not found")
 		}
-		fmt.Printf("GET controller string %#v \n\n", c)
 		ctype.CRDController2LhController(result, c)
+		fmt.Printf("GET controller string %#v \n\n", c)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 
@@ -446,8 +446,9 @@ func (s *CRDBackend) Get(key string, obj interface{}) (uint64, error) {
 		if err != nil || result == nil{
 			return 0, errors.New("crd not found")
 		}
-		fmt.Printf("GET setting string %#v \n\n", ss)
+
 		stype.CRDSetting2LhSetting(result, ss)
+		fmt.Printf("GET setting string %#v \n\n", ss)
 		return strconv.ParseUint(result.ResourceVersion, 10, 64)
 	}
 	panic(key)

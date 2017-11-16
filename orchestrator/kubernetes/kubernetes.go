@@ -256,7 +256,7 @@ func (k *Kuber) CreateController(req *orchestrator.Request) (instance *orchestra
 		if err != nil {
 			logrus.Errorf("fail to start controller %v of %v, cleaning up: %v",
 				req.InstanceName, req.VolumeName, err)
-			k.DeleteInstance(req)
+			k.StopInstance(req)
 		}
 	}()
 
@@ -286,6 +286,27 @@ func (k *Kuber) getDeviceName(volumeName string) string {
 }
 
 func (k *Kuber) CreateReplica(req *orchestrator.Request) (instance *orchestrator.Instance, err error) {
+
+	if err := orchestrator.ValidateRequestCreateReplica(req); err != nil {
+		return nil, err
+	}
+	if req.NodeID != k.currentNode.ID {
+		return nil, fmt.Errorf("incorrect node, requested %v, current %v", req.NodeID,
+			k.currentNode.ID)
+	}
+
+	instance = &orchestrator.Instance{
+		// It's weird that Docker put a forward slash to the container name
+		// So it become "/replica-1"
+		ID:      req.InstanceName,
+		Name:    req.InstanceName,
+		Running: false,
+		NodeID:  k.GetCurrentNode().ID,
+	}
+	return instance, nil
+}
+
+func (k *Kuber) startReplica(req *orchestrator.Request) (instance *orchestrator.Instance, err error) {
 	defer func() {
 		err = errors.Wrapf(err, "fail to create replica %v for %v",
 			req.InstanceName, req.VolumeName)
@@ -349,7 +370,8 @@ func (k *Kuber) CreateReplica(req *orchestrator.Request) (instance *orchestrator
 				{
 					Name: "volume",
 					VolumeSource: apiv1.VolumeSource{
-						EmptyDir: &apiv1.EmptyDirVolumeSource{
+						HostPath: &apiv1.HostPathVolumeSource{
+							Path: "/var/longhorn/replica/"+req.InstanceName,
 						},
 					},
 				},
@@ -369,6 +391,7 @@ func (k *Kuber) CreateReplica(req *orchestrator.Request) (instance *orchestrator
 
 	defer func() {
 		if err != nil {
+			k.StopInstance(req)
 			k.DeleteInstance(req)
 		}
 	}()
@@ -433,7 +456,7 @@ func (k *Kuber) InspectInstance(req *orchestrator.Request) (instance *orchestrat
 	}
 
 	if pod == nil {
-		return nil, fmt.Errorf("incredible error can't get pod ip")
+		return nil, fmt.Errorf("incrediable error can't get pod ip")
 	}
 
 	fmt.Printf("get pod info %v\n", pod)
@@ -457,27 +480,41 @@ func (k *Kuber) InspectInstance(req *orchestrator.Request) (instance *orchestrat
 }
 
 func (k *Kuber) StartInstance(req *orchestrator.Request) (instance *orchestrator.Instance, err error) {
+	if strings.HasPrefix(req.InstanceName, req.VolumeName + "-replica") &&
+	! strings.HasSuffix(req.InstanceName, "controller") {
+		return k.startReplica(req)
+	}
 
+	fmt.Printf("Error start instance %v\n", req)
+	panic("error stop instance ")
 	return nil, nil
 }
 
 func (k *Kuber) StopInstance(req *orchestrator.Request) (instance *orchestrator.Instance, err error) {
-	return nil, nil
-}
 
-func (k *Kuber) DeleteInstance(req *orchestrator.Request) (err error) {
+	instance, err = k.InspectInstance(req)
+	if err != nil {
+		return nil, fmt.Errorf("can't get instance")
+	}
 	defer func() {
 		err = errors.Wrapf(err, "fail to delete instance %v(%v)", req.InstanceName, req.InstanceID)
 	}()
 
 	if err := orchestrator.ValidateRequestInstanceOps(req); err != nil {
-		return err
+		return instance, err
 	}
+
 	if req.NodeID != k.currentNode.ID {
-		return fmt.Errorf("incorrect node, requested %v, current %v", req.NodeID,
+		return instance, fmt.Errorf("incorrect node, requested %v, current %v", req.NodeID,
 			k.currentNode.ID)
 	}
 
-	return k.cli.CoreV1().Pods(apiv1.NamespaceDefault).Delete(req.InstanceName, &meta_v1.DeleteOptions{})
+	return instance, k.cli.CoreV1().Pods(apiv1.NamespaceDefault).Delete(req.InstanceName, &meta_v1.DeleteOptions{})
 
+}
+
+func (k *Kuber) DeleteInstance(req *orchestrator.Request) (err error) {
+
+	// TODO the Delete for replica need to clean the volume file
+	return nil
 }
